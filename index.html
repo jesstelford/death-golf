@@ -2,8 +2,9 @@
 <script>
   c = a.getContext("2d");
 
-  // MINI 2D PHYSICS
-  // ===============
+  // ----------------------
+  // Start: MINI 2D PHYSICS
+  // ======================
 
   // 2D vector tools
   var Vec2 = (x, y) => ({ x, y });
@@ -22,10 +23,11 @@
   var distance = (v, w) => length(substract(v, w));
 
   // Gravity
-  var mGravity = Vec2(0, 100);
+  var mGravity = Vec2(0, 50);
 
   // All shapes
   var objects = [];
+  var collisions = [];
 
   // Collision info
   var collisionInfo = {}; // final collision between two shapes
@@ -375,6 +377,7 @@
     // but the Mass is inversed, so start scale with s2 and end scale with s1
     var start = scale(collisionInfo.S, s2.M / (s1.M + s2.M)),
       end = scale(collisionInfo.E, s1.M / (s1.M + s2.M)),
+      // Collision point
       p = add(start, end),
       // r is vector from center of object to collision point
       r1 = substract(p, s1.C),
@@ -390,6 +393,8 @@
     if (rVelocityInNormal > 0) {
       return;
     }
+
+    collisions.push({ s1, s2, r1, r2, p });
 
     // compute and apply response impulses for each object
     var newRestituion = Math.min(s1.R, s2.R),
@@ -436,6 +441,10 @@
     s2.v += R2crossT * jT * s2.I;
   };
 
+  // ====================
+  // End: MINI 2D PHYSICS
+  // --------------------
+
   // Loop
   setInterval((i, j, k) => {
     // Reset
@@ -444,7 +453,7 @@
     // Compute collisions
     for (k = 9; k--; ) {
       for (i = objects.length; i--; ) {
-        for (j = objects.length; j-- > i; ) {
+        for (j = objects.length; --j > i; ) {
           // Test bounds
           if (boundTest(objects[i], objects[j])) {
             // Test collision
@@ -506,6 +515,51 @@
       objects[i].v += (objects[i].a * 1) / 60;
       rotateShape(objects[i], (objects[i].v * 1) / 60);
     }
+
+    if (collisions) {
+      for (i = collisions.length; i--; ) {
+        var s1 = collisions[i].s1;
+        var s2 = collisions[i].s2;
+        var r1 = collisions[i].r1;
+        var r2 = collisions[i].r2;
+        var p = collisions[i].p;
+        console.log(s1.name + ":" + s2.name);
+        c.save();
+        c.translate(s1.C.x, s1.C.y);
+        c.strokeStyle = "red";
+        c.beginPath();
+        c.moveTo(0, 0);
+        c.lineTo(r1.x, r1.y);
+        c.stroke();
+        c.restore();
+
+        c.save();
+        c.translate(s2.C.x, s2.C.y);
+        c.strokeStyle = "red";
+        c.beginPath();
+        c.moveTo(0, 0);
+        c.lineTo(r2.x, r2.y);
+        c.stroke();
+        c.restore();
+
+        c.save();
+        c.translate(p.x, p.y);
+        c.strokeStyle = "blue";
+        c.beginPath();
+        c.moveTo(-5, -5);
+        c.lineTo(5, 5);
+        c.stroke();
+
+        c.beginPath();
+        c.moveTo(5, -5);
+        c.lineTo(-5, 5);
+        c.stroke();
+        c.restore();
+      }
+    }
+
+    // Clear out collision info for this frame
+    collisions.length = 0;
   }, 16);
 
   // New circle
@@ -528,29 +582,14 @@
   // DEMO
   // ====
 
-  r = Rectangle(Vec2(500, 200), 400, 20, 0, 1, 0.5);
+  var r = Rectangle(Vec2(500, 200), 400, 20, 0, 0.5, 0.1);
+  r.name = "ramp";
   rotateShape(r, 2.8);
-  Rectangle(Vec2(200, 400), 400, 20, 0, 1, 0.5);
-  Rectangle(Vec2(100, 200), 200, 20, 0, 1, 0.5);
-  Rectangle(Vec2(10, 360), 20, 100, 0, 1, 0.5);
+  r = Rectangle(Vec2(300, 400), 600, 20, 0, 1, 0.1);
+  r.name = "floor";
+  r = Rectangle(Vec2(10, 330), 20, 100, 0, 1, 0.1);
+  r.name = "wall";
 
-  for (var i = 0; i < 30; i++) {
-    r = Circle(
-      Vec2(Math.random() * 800, (Math.random() * 450) / 2),
-      Math.random() * 20 + 10,
-      Math.random() * 30,
-      Math.random() / 2,
-      Math.random() / 2
-    );
-    rotateShape(r, Math.random() * 7);
-    r = Rectangle(
-      Vec2(Math.random() * 800, (Math.random() * 450) / 2),
-      Math.random() * 20 + 10,
-      Math.random() * 20 + 10,
-      Math.random() * 30,
-      Math.random() / 2,
-      Math.random() / 2
-    );
-    rotateShape(r, Math.random() * 7);
-  }
+  var ball = Circle(Vec2(600, 50), 10, 1, 1, 1);
+  ball.name = "ball";
 </script>
