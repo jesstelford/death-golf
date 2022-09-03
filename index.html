@@ -43,11 +43,12 @@
   };
 
   // New shape
-  var RigidShape = (C, mass, F, R, T, B, W, H, shape) => {
+  var RigidShape = (C, mass, F, s, R, T, B, W, H, shape) => {
     shape = {
       T, // 0 circle / 1 rectangle
       C, // center
-      F, // friction
+      s, // static friction
+      F, // dynamic friction
       R, // restitution (bouncing)
       M: mass ? 1 / mass : 0, // inverseMass (0 if immobile)
       V: Vec2(0, 0), // velocity (speed)
@@ -391,19 +392,22 @@
 
     // if objects moving apart ignore
     if (rVelocityInNormal > 0) {
+      console.log("moving apart, ignoring");
       return;
     }
+    console.log("together again!");
 
     collisions.push({ s1, s2, r1, r2, p });
 
     // compute and apply response impulses for each object
     var newRestituion = Math.min(s1.R, s2.R),
-      newFriction = Math.min(s1.F, s2.F),
       // R cross N
       R1crossN = cross(r1, n),
       R2crossN = cross(r2, n),
       // Calc impulse scalar
       // the formula of jN can be found in http://www.myphysicslab.com/collision.html
+      // NOTE: jN is always positive because of our earlier check that
+      // rVelocityInNormal is below zero
       jN =
         (-(1 + newRestituion) * rVelocityInNormal) /
         (s1.M + s2.M + R1crossN * R1crossN * s1.I + R2crossN * R2crossN * s2.I),
@@ -416,22 +420,36 @@
     s2.V = add(s2.V, scale(impulse, s2.M));
     s1.v -= R1crossN * jN * s1.I;
     s2.v += R2crossN * jN * s2.I;
-    var tangent = scale(
-        normalize(
-          substract(relativeVelocity, scale(n, dot(relativeVelocity, n)))
-        ),
-        -1
+    var tangent = normalize(
+        substract(relativeVelocity, scale(n, dot(relativeVelocity, n)))
       ),
       R1crossT = cross(r1, tangent),
       R2crossT = cross(r2, tangent),
       jT =
-        (-(1 + newRestituion) * dot(relativeVelocity, tangent) * newFriction) /
+        (-(1 + newRestituion) * dot(relativeVelocity, tangent)) /
         (s1.M + s2.M + R1crossT * R1crossT * s1.I + R2crossT * R2crossT * s2.I);
 
-    // friction should less than force in normal direction
-    if (jT > jN) {
-      jT = jN;
+    // By Coulomb's Law, static friction applies until the threshold of
+    // staticFrictionCoefficient * jN is met. At that point (traction),
+    // dynamic friction takes over, which is a smaller coefficient, and uses a
+    // slightly different algorithm.
+    // NOTE: We're comparing magnitudes here, so need to Math.abs(jT) so we've
+    // got a positive number to compare to the positive jN value.
+    // NOTE2: A coefficient of static friction must be chosen. Here, we naively
+    // pick the smallest. Another option is to pick a pythagorian average:
+    // Math.sqrt(s1.s * s1.s + s2.s * s2.s).
+    console.log({ before: true, jT, jN });
+    if (Math.abs(jT) >= jN * Math.min(s1.s, s2.s)) {
+      // NOTE: A coefficient of dynamic friction must be chosen. Here, we
+      // naively pick the smallest. Another option is to pick a pythagorian
+      // average:
+      // Math.sqrt(s1.F * s1.F + s2.F * s2.F).
+      jT = -jN * Math.min(s1.F, s2.F);
+      console.log("static friction", jT);
+    } else {
+      console.log("dynamic friction", jT);
     }
+    console.log({ after: true, jT, jN });
 
     // impulse is from s1 to s2 (in opposite direction of velocity)
     impulse = scale(tangent, jT);
@@ -563,15 +581,24 @@
   }, 16);
 
   // New circle
-  var Circle = (center, radius, mass, friction, restitution) =>
-    RigidShape(center, mass, friction, restitution, 0, radius);
+  var Circle = (center, radius, mass, dFriction, sFriction, restitution) =>
+    RigidShape(center, mass, dFriction, sFriction, restitution, 0, radius);
 
   // New rectangle
-  var Rectangle = (center, width, height, mass, friction, restitution) =>
+  var Rectangle = (
+    center,
+    width,
+    height,
+    mass,
+    dFriction,
+    sFriction,
+    restitution
+  ) =>
     RigidShape(
       center,
       mass,
-      friction,
+      dFriction,
+      sFriction,
       restitution,
       1,
       Math.hypot(width, height) / 2,
@@ -582,14 +609,14 @@
   // DEMO
   // ====
 
-  var r = Rectangle(Vec2(500, 200), 400, 20, 0, 0.5, 0.1);
+  var r = Rectangle(Vec2(500, 200), 400, 20, 0, 0.9, 1, 0.5);
   r.name = "ramp";
   rotateShape(r, 2.8);
-  r = Rectangle(Vec2(300, 400), 600, 20, 0, 1, 0.1);
+  r = Rectangle(Vec2(300, 400), 600, 20, 0, 0.1, 0.5, 0.5);
   r.name = "floor";
-  r = Rectangle(Vec2(10, 330), 20, 100, 0, 1, 0.1);
+  r = Rectangle(Vec2(10, 330), 20, 100, 0, 0.9, 1, 0.5);
   r.name = "wall";
 
-  var ball = Circle(Vec2(600, 50), 10, 1, 1, 1);
+  var ball = Circle(Vec2(600, 50), 10, 1, 0.9, 1, 1);
   ball.name = "ball";
 </script>
