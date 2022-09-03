@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   self: null,
   create: function (slf) {
     this.self = slf;
@@ -134,4 +134,4 @@ module.exports = {
     this.self.ctx.fillText(stat2, 10, 40);
     this.self.ctx.fillText(stat3, 10, 60);
   }
-}
+};

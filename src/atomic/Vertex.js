@@ -1,4 +1,4 @@
-const Vector = require('./Vector');
+import Vector from './Vector';
 
 /**
  * @class Vertex
@@ -56,8 +56,4 @@ class Vertex {
     ;
   }
 }
-;
-
-
-
-module.exports = Vertex;
+export default Vertex;

@@ -1,4 +1,4 @@
-const Vector = require('./Vector');
+import Vector from './Vector';
 
 /**
  * @class Collision
@@ -144,4 +144,4 @@ class Collision {
   }
 }
 
-module.exports = Collision;
+export default Collision;

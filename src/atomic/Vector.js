@@ -169,4 +169,4 @@ Vector.prototype = {
   },
 }
 
-module.exports = Vector;
+export default Vector;

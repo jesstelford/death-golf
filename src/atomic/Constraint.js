@@ -45,8 +45,4 @@ class Constraint {
     this.p1.y -= adjustY;
   }
 }
-;
-
-
-
-module.exports = Constraint;
+export default Constraint;

@@ -1,8 +1,8 @@
-const Renderer = require('./Renderer');
-const Body = require('./Body');
-const Collision = require('./Collision');
-const Constraint = require('./Constraint');
-const Vertex = require('./Vertex');
+import Renderer from './Renderer';
+import Body from './Body';
+import Collision from './Collision';
+import Constraint from './Constraint';
+import Vertex from './Vertex';
 
 
 /**
@@ -476,4 +476,4 @@ Atomic.prototype.fpsScope = {
   fpsBars: []
 };
 
-module.exports = Atomic;
+export default Atomic;

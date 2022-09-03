@@ -1,6 +1,6 @@
-const Vector = require('./Vector');
-const Constraint = require('./Constraint');
-const Vertex = require('./Vertex');
+import Vector from './Vector';
+import Constraint from './Constraint';
+import Vertex from './Vertex';
 
 /**
  * @class Body
@@ -185,4 +185,4 @@ class Body {
 
 
 
-module.exports = Body;
+export default Body;
