@@ -41,6 +41,15 @@ export class Vector {
     return new Vector(this.x + vector.x, this.y + vector.y);
   }
 
+  // c = Math.cos(angle)
+  // s = Math.sin(angle)
+  rotate(center: Vector, c: number, s: number) {
+    return new Vector(
+      c * (this.x - center.x) - s * (this.y - center.y) + center.x,
+      s * (this.x - center.x) + c * (this.y - center.y) + center.y
+    );
+  }
+
   // zero
   static z() {
     return new Vector(0, 0);
