@@ -1,6 +1,6 @@
-import { Body } from "../physic/body";
+import type { Body } from "../physic/body";
 import type { Shape } from "../math/shape";
-import { Vector } from "../math/vector";
+import type { Vector } from "../math/vector";
 
 function resolveWithFriction(
   A: Body,

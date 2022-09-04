@@ -2,19 +2,21 @@ import { Vector } from "../math/vector";
 import { Shape } from "../math/shape";
 
 export class Body {
+  // variables
   pos: Vector;
   velocity: Vector;
+  field: Vector;
+
+  // constants
   invMass: number;
   shape: Shape;
-  impulse: Vector;
-  field: Vector;
   drag: number;
   bounciness: number;
   staticFrictionCoefficient: number;
   dynamicFrictionCoefficient: number;
-  isStatic: boolean;
   ignoreCollision: boolean;
   isRigid: boolean;
+
   onCollision: (mtv: Vector) => void;
   onCollisionResolved: (speed: number) => void;
 
@@ -28,7 +30,6 @@ export class Body {
     this.drag = 0.05;
     this.staticFrictionCoefficient = 0.04;
     this.dynamicFrictionCoefficient = 0.02;
-    this.isStatic = true;
     this.ignoreCollision = false;
     this.isRigid = true;
   }
