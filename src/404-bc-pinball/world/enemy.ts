@@ -9,7 +9,7 @@ export class Enemy extends DestroyableEntity {
     constructor(position: Vector) {
         super('enemy', position, 50, Settings.wallBounciness, 1);
         this.armor = Assets.fxs['armor.fx'];
-        this.body.speed = new Vector(0, 60);
+        this.body.velocity = new Vector(0, 60);
         this.body.onCollision = () => this.onCollision();
         this.body.isRigid = false;
         this.score = 50;

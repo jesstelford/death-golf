@@ -4,13 +4,13 @@ import { Vector } from "./404-bc-pinball/math/vector";
 import { Settings } from "./404-bc-pinball/settings";
 import { Body } from "./404-bc-pinball/physic/body";
 import { Shape } from "./404-bc-pinball/math/shape";
-import { CollisionEngine } from "./404-bc-pinball/physic/collisionEngine";
+import { collider } from "./404-bc-pinball/physic/collisionEngine";
 
 const c = window.a.getContext("2d");
 
 const player = new Ball();
-player.body.pos = new Vector(540, 400);
-player.body.speed = new Vector(100, 0);
+player.body.pos = new Vector(340, 400);
+player.body.velocity = new Vector(100, 0);
 
 const wall = new Body(1);
 
@@ -22,15 +22,11 @@ wall.shape = new Shape([
   new Vector(400, 50),
   new Vector(400, 0),
 ]);
+// Infinite mass == immobile
+wall.invMass = 0;
 wall.pos = new Vector(340, 720);
 wall.isRigid = true;
-wall.onAreaExit = () => {
-  console.log("wall onAreaExit");
-  if (player.body.pos.y < 200) wall.isRigid = true;
-};
 wall.bounciness = Settings.wallBounciness;
-
-const collisionEngine = new CollisionEngine();
 
 const targetFrameTimeMs = 1;
 var accumFrameTimeMs = 0;
@@ -46,7 +42,7 @@ const loop = (thisFrameMs: number) => {
     accumFrameTimeMs -= targetFrameTimeMs;
     // Do updates based on targetFrameTimeMs ms passing
     player.up(targetFrameTimeMs / 1000);
-    collisionEngine.update(player.body, wall);
+    collider(player.body, wall);
   }
 
   // Drawing

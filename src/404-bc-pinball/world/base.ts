@@ -62,7 +62,6 @@ class BaseImpl {
         this.invisibleWall.pos = new Vector(540, 120);
         this.invisibleWall.shape = new Shape([new Vector(0, 0),new Vector(0, 100),new Vector(60, 100),new Vector(60, -50)]);
         this.invisibleWall.isRigid = false;
-        this.invisibleWall.onAreaExit = () => {if (this.player.body.pos.y < 200) this.invisibleWall.isRigid = true;}
         this.invisibleWall.bounciness = Settings.wallBounciness;
         this.year = '0';
     }

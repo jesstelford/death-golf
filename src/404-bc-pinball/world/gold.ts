@@ -12,16 +12,7 @@ export class Gold extends Entity {
     constructor(position: Vector) {
         super('gold', position);
         this.body.isRigid = false;
-        this.body.onAreaEnter = () => this.onAreaEnter();
         this.jackpot = false;
-    }
-
-    onAreaEnter() {
-        Phase1.goldScore++;
-        Phase1.updateScore();
-        this.jackpot = !this.jackpot;
-        Gui.score(5);
-		Effects.coin();
     }
 
     render(context: CanvasRenderingContext2D) {

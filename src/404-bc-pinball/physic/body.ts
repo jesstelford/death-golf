@@ -3,30 +3,31 @@ import { Shape } from "../math/shape";
 
 export class Body {
   pos: Vector;
-  speed: Vector;
-  mass: number;
+  velocity: Vector;
+  invMass: number;
   shape: Shape;
   impulse: Vector;
   field: Vector;
   drag: number;
   bounciness: number;
+  staticFrictionCoefficient: number;
+  dynamicFrictionCoefficient: number;
   isStatic: boolean;
   ignoreCollision: boolean;
   isRigid: boolean;
   onCollision: (mtv: Vector) => void;
   onCollisionResolved: (speed: number) => void;
-  onAreaEnter: () => void;
-  onAreaExit: () => void;
 
   constructor(mass: number) {
     this.pos = Vector.z();
-    this.speed = Vector.z();
-    this.mass = mass;
+    this.velocity = Vector.z();
+    this.invMass = 1 / mass;
     this.shape = null;
-    this.impulse = Vector.z();
     this.field = Vector.z();
     this.bounciness = 1;
-    this.drag = 0.5;
+    this.drag = 0.05;
+    this.staticFrictionCoefficient = 0.04;
+    this.dynamicFrictionCoefficient = 0.02;
     this.isStatic = true;
     this.ignoreCollision = false;
     this.isRigid = true;
@@ -34,10 +35,6 @@ export class Body {
 
   hFlip(axe: number) {
     this.shape = this.shape.hFlip(axe);
-  }
-
-  applyImpulse(force: Vector) {
-    this.impulse = this.impulse.add(force);
   }
 
   applyField(force: Vector) {
@@ -57,12 +54,11 @@ export class Body {
   }
 
   update(delta: number) {
-    this.speed = this.speed.add(
-      this.impulse.add(this.field).multiply((1 / this.mass) * delta)
+    this.velocity = this.velocity.add(
+      this.field.multiply(this.invMass * delta)
     );
-    this.translate(this.speed.multiply(delta));
+    this.translate(this.velocity.multiply(delta));
     // Apply linear damping to simulate air friction
-    this.speed = this.speed.multiply(1 / (1 + this.drag * delta));
-    this.impulse = Vector.z();
+    this.velocity = this.velocity.multiply(1 / (1 + this.drag * delta));
   }
 }

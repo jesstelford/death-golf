@@ -72,10 +72,10 @@ export class Kicker {
 
     update(delta: number) {
         if (Base.player.body.pos.y + Base.player.spriteBounds.height > this.body.pos.y + 10) {
-            if (this.body.speed.y == 0) this.body.speed = new Vector(0, -Settings.kickerImpulseSpeed);
+            if (this.body.velocity.y == 0) this.body.velocity = new Vector(0, -Settings.kickerImpulseSpeed);
         }
         else {
-            this.body.speed = Vector.z();
+            this.body.velocity = Vector.z();
         }
     }
 

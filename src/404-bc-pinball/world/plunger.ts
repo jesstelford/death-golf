@@ -22,15 +22,15 @@ export class Plunger extends Entity {
 				Effects.launcher();
 			}
             if (this.compression <= Settings.launcherAmplitude) {
-				this.body.speed = new Vector(0, Settings.launcherCompressingSpeed);
+				this.body.velocity = new Vector(0, Settings.launcherCompressingSpeed);
             } else {
-                this.body.speed = Vector.z();
+                this.body.velocity = Vector.z();
             }
         } else {
             if (this.compression > 0) {
-                this.body.speed = new Vector(0, -Settings.launcherSpeed);
+                this.body.velocity = new Vector(0, -Settings.launcherSpeed);
             } else {
-				this.body.speed = Vector.z();
+				this.body.velocity = Vector.z();
 				this.compression = posY - this.body.pos.y;
             }
         }

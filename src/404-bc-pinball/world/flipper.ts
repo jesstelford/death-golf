@@ -50,13 +50,13 @@ export class Flipper extends Entity {
                 const distance = this.center.s(this.player.body.pos).l() + 20;
                 this.angle += rotation;
                 this.body.rotate(this.center.s(this.body.pos), rotation);
-                this.body.speed = new Vector(
+                this.body.velocity = new Vector(
                     Math.sign(this.maxAngle) * Math.cos(this.angle),
                     -Math.sign(this.maxAngle) * Math.sin(this.angle)
                     ).m(10000 * this.angularSpeed / distance); 
             } else {
                 this.flipping = false;
-                this.body.speed = Vector.z();
+                this.body.velocity = Vector.z();
             }
         } else {
             if (Math.abs(this.angle) > Math.PI / 360) {
@@ -64,13 +64,13 @@ export class Flipper extends Entity {
                 const distance = this.center.s(this.player.body.pos).l() + 20;
                 this.angle += rotation;
                 this.body.rotate(this.center.s(this.body.pos), rotation);
-                this.body.speed = new Vector(
+                this.body.velocity = new Vector(
                     Math.sign(this.maxAngle) * Math.cos(this.angle),
                     -Math.sign(this.maxAngle) * Math.sin(this.angle)
                     ).m(-10000 * this.angularSpeed / distance); 
             } else {
                 this.flipping = false;
-				this.body.speed = Vector.z();
+				this.body.velocity = Vector.z();
 				this.angle = 0;
             }
         }
