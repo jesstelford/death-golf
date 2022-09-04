@@ -43,20 +43,20 @@
   };
 
   // New shape
-  var RigidShape = (C, mass, F, s, R, T, B, W, H, shape) => {
+  var RigidShape = (C, mass, F, s, R, T, B, W, H, X, shape) => {
     shape = {
       T, // 0 circle / 1 rectangle
       C, // center
-      s, // static friction
+      s: s || F, // static friction
       F, // dynamic friction
       R, // restitution (bouncing)
       M: mass ? 1 / mass : 0, // inverseMass (0 if immobile)
       V: Vec2(0, 0), // velocity (speed)
-      VDrag: 0.1,
+      VDrag: 0,
       A: mass ? mGravity : Vec2(0, 0), // acceleration
       G: 0, // angle
       v: 0, // angle velocity
-      vDrag: 0.1,
+      vDrag: 0,
       a: 0, // angle acceleration
       B, // (bounds) radius
       W, // width
@@ -68,13 +68,7 @@
         ? (mass * B ** 2) / 12
         : 0, // circle
       N: [], // face normals array (rectangles)
-      X: [
-        // Vertex: 0: TopLeft, 1: TopRight, 2: BottomRight, 3: BottomLeft (rectangles)
-        Vec2(C.x - W / 2, C.y - H / 2),
-        Vec2(C.x + W / 2, C.y - H / 2),
-        Vec2(C.x + W / 2, C.y + H / 2),
-        Vec2(C.x - W / 2, C.y + H / 2),
-      ],
+      X,
     };
 
     // Prepare rectangle
@@ -92,7 +86,7 @@
 
     // Rectangle (move vertex)
     if (shape.T) {
-      for (i = 4; i--; ) {
+      for (i = shape.X.length; i--; ) {
         shape.X[i] = add(shape.X[i], v);
       }
     }
@@ -105,7 +99,7 @@
 
     // Rectangle (rotate vertex)
     if (shape.T) {
-      for (i = 4; i--; ) {
+      for (i = shape.X.length; i--; ) {
         shape.X[i] = rotate(shape.X[i], shape.C, angle);
       }
       computeRectNormals(shape);
@@ -115,13 +109,15 @@
   // Test if two shapes have intersecting bounding circles
   var boundTest = (s1, s2) => length(substract(s2.C, s1.C)) <= s1.B + s2.B;
 
-  // Compute face normals (for rectangles)
+  // Compute face normals
   var computeRectNormals = (shape, i) => {
-    // N: normal of each face toward outside of rectangle
-    // 0: Top, 1: Right, 2: Bottom, 3: Left
-    for (i = 4; i--; ) {
+    // N: normal of each face toward outside of shape
+    for (i = shape.X.length; i--; ) {
       shape.N[i] = normalize(
-        substract(shape.X[(i + 1) % 4], shape.X[(i + 2) % 4])
+        substract(
+          shape.X[(i + 1) % shape.X.length],
+          shape.X[(i + 2) % shape.X.length]
+        )
       );
     }
   };
@@ -138,7 +134,7 @@
       tmpSupportPoint,
       tmpSupportPointDist;
 
-    for (i = 4; hasSupport && i--; ) {
+    for (i = rect.X.length; hasSupport && i--; ) {
       // Retrieve a face normal from A
       n = rect.N[i];
 
@@ -152,7 +148,7 @@
       tmpSupportPoint = -1;
 
       // check each vector of other object
-      for (j = 4; j--; ) {
+      for (j = otherRect.X.length; j--; ) {
         vToEdge = substract(otherRect.X[j], ptOnEdge);
         projection = dot(vToEdge, dir);
 
@@ -511,11 +507,11 @@
       // ----
 
       c.save();
-      c.translate(objects[i].C.x, objects[i].C.y);
-      c.rotate(objects[i].G);
 
       // Circle
       if (!objects[i].T) {
+        c.translate(objects[i].C.x, objects[i].C.y);
+        c.rotate(objects[i].G);
         c.beginPath();
         c.arc(0, 0, objects[i].B, 0, 7);
         c.lineTo(0, 0);
@@ -526,12 +522,14 @@
       // Rectangle
       else {
         //if(objects[i].T == 1){
-        c.strokeRect(
-          -objects[i].W / 2,
-          -objects[i].H / 2,
-          objects[i].W,
-          objects[i].H
-        );
+        c.beginPath();
+        let verts = objects[i].X;
+        c.moveTo(verts[0].x, verts[0].y);
+        for (let t = 1; t < verts.length; t++) {
+          c.lineTo(verts[t].x, verts[t].y);
+        }
+        c.closePath();
+        c.stroke();
       }
 
       c.restore();
@@ -604,8 +602,25 @@
   }, 16);
 
   // New circle
-  var Circle = (center, radius, mass, dFriction, sFriction, restitution) =>
-    RigidShape(center, mass, dFriction, sFriction, restitution, 0, radius);
+  var Circle = (center, radius, mass, dFriction, sFriction, restitution) => {
+    //Vec2(C.x - W / 2, C.y - H / 2);
+    //shape.X[i] = rotate(shape.X[i], shape.C, angle);
+    return RigidShape(
+      center,
+      mass,
+      dFriction,
+      sFriction,
+      restitution,
+      1,
+      Math.hypot(radius, radius) / 2,
+      radius,
+      radius,
+      // An approximation of a circle in 32 points
+      [...Array(6)].map((_, i) =>
+        add(center, rotate(Vec2(0, radius), Vec2(0, 0), (i * 2 * Math.PI) / 6))
+      )
+    );
+  };
 
   // New rectangle
   var Rectangle = (
@@ -626,7 +641,14 @@
       1,
       Math.hypot(width, height) / 2,
       width,
-      height
+      height,
+      [
+        // Vertex: 0: TopLeft, 1: TopRight, 2: BottomRight, 3: BottomLeft (rectangles)
+        Vec2(center.x - width / 2, center.y - height / 2),
+        Vec2(center.x + width / 2, center.y - height / 2),
+        Vec2(center.x + width / 2, center.y + height / 2),
+        Vec2(center.x - width / 2, center.y + height / 2),
+      ]
     );
 
   // DEMO
@@ -640,6 +662,6 @@
   r = Rectangle(Vec2(10, 330), 20, 100, 0, 0.9, 1, 0.5);
   r.name = "wall";
 
-  var ball = Circle(Vec2(600, 50), 10, 50, 0.3, 0.7, 1);
+  var ball = Circle(Vec2(600, 50), 10, 50, 0.3, 0.7, 0.1);
   ball.name = "ball";
 </script>
