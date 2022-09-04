@@ -397,8 +397,6 @@
     }
     console.log("together again!");
 
-    collisions.push({ s1, s2, r1, r2, p });
-
     // compute and apply response impulses for each object
     var newRestituion = Math.min(s1.R, s2.R),
       // R cross N
@@ -450,6 +448,15 @@
       console.log("dynamic friction", jT);
     }
     console.log({ after: true, jT, jN });
+    console.log("normal:", n.x, n.y);
+    console.log("rVel:", relativeVelocity.x, relativeVelocity.y);
+    console.log("tangent:", tangent.x, tangent.y);
+    console.log("s1.V:", s1.V.x, s1.V.y);
+    console.log("s1.v:", s1.v);
+    console.log("s2.V:", s2.V.x, s2.V.y);
+    console.log("s2.v:", s2.v);
+
+    collisions.push({ s1, s2, r1, r2, p, tangent });
 
     // impulse is from s1 to s2 (in opposite direction of velocity)
     impulse = scale(tangent, jT);
@@ -541,6 +548,7 @@
         var r1 = collisions[i].r1;
         var r2 = collisions[i].r2;
         var p = collisions[i].p;
+        var tangent = collisions[i].tangent;
         console.log(s1.name + ":" + s2.name);
         c.save();
         c.translate(s1.C.x, s1.C.y);
@@ -571,6 +579,15 @@
         c.beginPath();
         c.moveTo(5, -5);
         c.lineTo(-5, 5);
+        c.stroke();
+        c.restore();
+
+        c.save();
+        c.translate(p.x, p.y);
+        c.strokeStyle = "green";
+        c.beginPath();
+        c.moveTo(0, 0);
+        c.lineTo(tangent.x * 100, tangent.y * 100);
         c.stroke();
         c.restore();
       }
@@ -617,6 +634,6 @@
   r = Rectangle(Vec2(10, 330), 20, 100, 0, 0.9, 1, 0.5);
   r.name = "wall";
 
-  var ball = Circle(Vec2(600, 50), 10, 1, 0.9, 1, 1);
+  var ball = Circle(Vec2(600, 50), 10, 50, 0.3, 0.7, 1);
   ball.name = "ball";
 </script>
