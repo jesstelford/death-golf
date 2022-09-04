@@ -10,7 +10,7 @@ const c = window.a.getContext("2d");
 
 const player = new Ball();
 player.body.pos = new Vector(540, 400);
-player.body.speed = new Vector(10, 0);
+player.body.speed = new Vector(100, 0);
 
 const wall = new Body(1);
 
