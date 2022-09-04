@@ -5,6 +5,10 @@ import { Shape } from "./404-bc-pinball/math/shape";
 import { collider } from "./404-bc-pinball/physic/collisionEngine";
 import { Assets } from "./404-bc-pinball/assets";
 
+// Detect key presses: https://xem.github.io/codegolf/keyspressed.html
+var keys = {};
+onkeydown = onkeyup = (e) => (keys[e.key] = e.type[5]);
+
 const c = window.a.getContext("2d");
 
 const player = new Body(Settings.ballMass);
@@ -53,6 +57,11 @@ var lastFrameMs = performance.now();
 
 const loop = (thisFrameMs: number) => {
   requestAnimationFrame(loop);
+
+  // Input
+  if (keys[" "]) {
+    player.velocity = new Vector(300, -400);
+  }
 
   // Physics updates
   accumFrameTimeMs += thisFrameMs - lastFrameMs;
