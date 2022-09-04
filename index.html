@@ -52,9 +52,11 @@
       R, // restitution (bouncing)
       M: mass ? 1 / mass : 0, // inverseMass (0 if immobile)
       V: Vec2(0, 0), // velocity (speed)
+      VDrag: 0.1,
       A: mass ? mGravity : Vec2(0, 0), // acceleration
       G: 0, // angle
       v: 0, // angle velocity
+      vDrag: 0.1,
       a: 0, // angle acceleration
       B, // (bounds) radius
       W, // width
@@ -209,11 +211,11 @@
         /*
     // same position
     else {
-      
+
       if(c1.B > c2.B){
         setInfo(collisionInfo, rSum, Vec2(0, -1), add(c1.C, Vec2(0, c1.B)));
       }
-      
+
       else {
         setInfo(collisionInfo, rSum, Vec2(0, -1), add(c2.C, Vec2(0, c2.B)));
       }
@@ -539,6 +541,10 @@
       moveShape(objects[i], scale(objects[i].V, 1 / 60));
       objects[i].v += (objects[i].a * 1) / 60;
       rotateShape(objects[i], (objects[i].v * 1) / 60);
+      // Apply linear damping to simulate air friction
+      objects[i].V = scale(objects[i].V, 1 / (1 + objects[i].VDrag / 60));
+      // Apply angular damping to stop infinite rolling
+      objects[i].v *= 1 / (1 + objects[i].vDrag / 60);
     }
 
     if (collisions) {
