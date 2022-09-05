@@ -70,15 +70,14 @@ player.applyField(new Vector(0, GRAVITY / player.invMass));
 player.staticFrictionCoefficient = BALL_STATIC_FRICTION;
 player.dynamicFrictionCoefficient = BALL_DYNAMIC_FRICTION;
 
-const wall = new Body(1);
+// zero mass == immobile
+const wall = new Body(0);
 wall.shape = new Shape([
   new Vector(0, 0),
   new Vector(0, 50),
   new Vector(400, 50),
   new Vector(400, 0),
 ]);
-// Infinite mass == immobile
-wall.invMass = 0;
 wall.pos = new Vector(340, 520);
 wall.isRigid = true;
 wall.bounciness = WALL_BOUNCINESS;

@@ -28,7 +28,7 @@ export class Body {
   constructor(mass: number) {
     this.pos = Vector.z();
     this.velocity = Vector.z();
-    this.invMass = 1 / mass;
+    this.invMass = mass === 0 ? 0 : 1 / mass;
     this.shape = null;
     this.field = Vector.z();
     this.bounciness = 1;
