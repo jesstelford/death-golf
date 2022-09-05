@@ -114,18 +114,38 @@ const loop = (thisFrameMs: number) => {
   // Input
   // Started a drag
   if (keysDown["drag"]) {
-    dragging = true;
+    if (player.isResting()) {
+      dragging = true;
+    }
+  }
+
+  if (keysDown["k"]) {
+    player.velocity = new Vector(0, -500);
   }
 
   if (dragging) {
-    updateShotFromDrag();
+    // The ball has started moving again since the drag started, so we cancel it
+    if (!player.isResting()) {
+      dragging = false;
+    } else {
+      updateShotFromDrag();
+    }
   }
 
   if (keysUp["drag"]) {
-    dragging = false;
-    if (shotSpeed) {
-      shots++;
-      player.velocity = dragVector.normal().multiply(shotSpeed);
+    // Dragging can be virtually cancelled mid-drag (eg; by the ball being
+    // knocked out of rest), so we have to check if dragging is still occuring
+    // or not before allowing a shot.
+    // NOTE: It's important we check dragging here, and not the player's resting
+    // state because it could have become rested again while the user holds the
+    // drag action. We want them to stop dragging and re-drag to setup a new
+    // shot.
+    if (dragging) {
+      dragging = false;
+      if (shotSpeed) {
+        shots++;
+        player.velocity = dragVector.normal().multiply(shotSpeed);
+      }
     }
   }
 
@@ -170,6 +190,9 @@ const loop = (thisFrameMs: number) => {
 
   c.save();
   c.font = "28px sans";
+  if (player.isResting()) {
+    c.fillText(`resting`, 10, 20);
+  }
   c.fillText(`shots: ${shots}`, 10, 50);
   if (dragging) {
     c.fillText(
