@@ -96,15 +96,23 @@ const maxShotSpeed = 820;
 let shotSpeed: number = 0;
 
 const updateShotFromDrag = () => {
+  // The relative vector from start to end dragging positions (ie; mouse /
+  // touch)
   dragVector = dragStartPos.subtract(dragPos);
+  // The distance dragged, clamped to a maximum value
   const dragDistance = Math.min(dragVector.length(), maxDragDistance);
-  if (dragDistance >= minDragDistance) {
-    shotSpeed =
-      minShotSpeed +
-      (dragDistance / (maxDragDistance - minDragDistance)) *
-        (maxShotSpeed - minShotSpeed);
-  } else {
+  if (dragDistance < minDragDistance) {
+    // If the threshold wasn't reached, then no updates are necessary
+    // This is to avoid accidental taps / clicks from firing a shot
     shotSpeed = 0;
+  } else {
+    shotSpeed =
+      // Project the dragged distance onto the shot speed range. Ie; scale the
+      // drag distance as a percentage of the shot speed range.
+      (dragDistance / (maxDragDistance - minDragDistance)) *
+        (maxShotSpeed - minShotSpeed) +
+      // And add back in the minimum shot speed since we passed the threshold
+      minShotSpeed;
   }
 };
 
