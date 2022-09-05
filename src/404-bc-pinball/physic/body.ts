@@ -1,6 +1,8 @@
 import { Vector } from "../math/vector";
 import { Shape } from "../math/shape";
 
+const restedFramesMask = 0b11111;
+
 export class Body {
   // variables
   pos: Vector;
@@ -16,6 +18,9 @@ export class Body {
   dynamicFrictionCoefficient: number;
   ignoreCollision: boolean;
   isRigid: boolean;
+  restThreshold: number;
+
+  _restFrames: number;
 
   onCollision: (mtv: Vector) => void;
   onCollisionResolved: (speed: number) => void;
@@ -32,6 +37,9 @@ export class Body {
     this.dynamicFrictionCoefficient = 0.02;
     this.ignoreCollision = false;
     this.isRigid = true;
+    this.restThreshold = 1;
+
+    this._restFrames = 0;
   }
 
   hFlip(axe: number) {
@@ -54,6 +62,13 @@ export class Body {
     return new Shape(this.shape.vertices.map((v) => v.add(this.pos)));
   }
 
+  isResting() {
+    // Apply the bit mask (to remove any old "frame" bits).
+    // Then check to see if all the bits are set.
+    // If so, then it counts as having reached "rest"
+    return (this._restFrames & restedFramesMask) === restedFramesMask;
+  }
+
   update(delta: number) {
     this.velocity = this.velocity.add(
       this.field.multiply(this.invMass * delta)
@@ -61,5 +76,12 @@ export class Body {
     this.translate(this.velocity.multiply(delta));
     // Apply linear damping to simulate air friction
     this.velocity = this.velocity.multiply(1 / (1 + this.drag * delta));
+
+    // Left shift by 1 per update
+    this._restFrames <<= 1;
+    if (this.velocity.length() < this.restThreshold) {
+      // Set the lowest bit to represent that it's resting this frame
+      this._restFrames += 1;
+    }
   }
 }
