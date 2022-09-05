@@ -43,7 +43,7 @@ export class Vector {
 
   // c = Math.cos(angle)
   // s = Math.sin(angle)
-  rotate(center: Vector, c: number, s: number) {
+  rotate(c: number, s: number, center: Vector = new Vector(0, 0)) {
     return new Vector(
       c * (this.x - center.x) - s * (this.y - center.y) + center.x,
       s * (this.x - center.x) + c * (this.y - center.y) + center.y

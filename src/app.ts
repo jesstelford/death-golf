@@ -31,7 +31,6 @@ player.shape = Shape.fromSvgData(
     toJSON: () => "",
   }
 );
-player.isStatic = false;
 player.applyField(new Vector(0, Settings.gravity / player.invMass));
 player.staticFrictionCoefficient = Settings.ballStaticFriction;
 player.dynamicFrictionCoefficient = Settings.ballDynamicFriction;
@@ -49,6 +48,8 @@ wall.pos = new Vector(340, 720);
 wall.isRigid = true;
 wall.bounciness = Settings.wallBounciness;
 
+let shotAngle: number = 0.48;
+
 const objects = [{ body: player }, { body: wall }];
 
 const targetFrameTimeMs = 1;
@@ -60,7 +61,11 @@ const loop = (thisFrameMs: number) => {
 
   // Input
   if (keys[" "]) {
-    player.velocity = new Vector(300, -400);
+    // TODO: Calculate based on angle
+    player.velocity = new Vector(0, -700).rotate(
+      Math.cos(shotAngle),
+      Math.sin(shotAngle)
+    );
   }
 
   // Physics updates

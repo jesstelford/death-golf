@@ -26,7 +26,7 @@ export class Shape {
   rotate(center: Vector, angle: number) {
     const c = Math.cos(angle);
     const s = Math.sin(angle);
-    this.vertices = this.vertices.map((vertex) => vertex.rotate(center, c, s));
+    this.vertices = this.vertices.map((vertex) => vertex.rotate(c, s, center));
   }
 
   hFlip(axe: number) {
