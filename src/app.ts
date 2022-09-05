@@ -1,9 +1,16 @@
 import { Vector } from "./404-bc-pinball/math/vector";
-import { Settings } from "./404-bc-pinball/settings";
 import { Body } from "./404-bc-pinball/physic/body";
 import { Shape } from "./404-bc-pinball/math/shape";
 import { collider } from "./404-bc-pinball/physic/collisionEngine";
 import { Assets } from "./404-bc-pinball/assets";
+
+// Constants
+const WALL_BOUNCINESS = 30000;
+const BALL_MASS = 20;
+const BALL_BOUNCINESS = 0.6;
+const BALL_STATIC_FRICTION = 0.04;
+const BALL_DYNAMIC_FRICTION = 0.02;
+const GRAVITY = 1000;
 
 // Detect key presses up & down.
 // Modified from https://xem.github.io/codegolf/keyspressed.html
@@ -39,11 +46,11 @@ window.a.onmouseup = (evt) => {
 
 const c = window.a.getContext("2d");
 
-const player = new Body(Settings.ballMass);
+const player = new Body(BALL_MASS);
 player.pos = new Vector(340, 400);
 player.velocity = new Vector(100, 0);
 player.shape = Assets.colliders[`ball.collider`];
-player.bounciness = Settings.ballBounciness;
+player.bounciness = BALL_BOUNCINESS;
 // TODO: Don't hard code this
 player.shape = Shape.fromSvgData(
   "l-3 3-3 2.2-3 1.3-4 .3-4-.6-3-1.6-3-2.5-3-3.1-1-3.6v-7.6l2-3.4 2-3 4-2.2 3-1.3 4-.3 4 .6 3 1.6 3 2.5 2 3.1 2 3.6v3.8l-1 3.8z",
@@ -59,9 +66,9 @@ player.shape = Shape.fromSvgData(
     toJSON: () => "",
   }
 );
-player.applyField(new Vector(0, Settings.gravity / player.invMass));
-player.staticFrictionCoefficient = Settings.ballStaticFriction;
-player.dynamicFrictionCoefficient = Settings.ballDynamicFriction;
+player.applyField(new Vector(0, GRAVITY / player.invMass));
+player.staticFrictionCoefficient = BALL_STATIC_FRICTION;
+player.dynamicFrictionCoefficient = BALL_DYNAMIC_FRICTION;
 
 const wall = new Body(1);
 wall.shape = new Shape([
@@ -74,7 +81,7 @@ wall.shape = new Shape([
 wall.invMass = 0;
 wall.pos = new Vector(340, 520);
 wall.isRigid = true;
-wall.bounciness = Settings.wallBounciness;
+wall.bounciness = WALL_BOUNCINESS;
 
 let dragging: boolean = false;
 let shots: number = 0;
