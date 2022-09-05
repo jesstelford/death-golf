@@ -5,9 +5,12 @@ import { Shape } from "./404-bc-pinball/math/shape";
 import { collider } from "./404-bc-pinball/physic/collisionEngine";
 import { Assets } from "./404-bc-pinball/assets";
 
-// Detect key presses: https://xem.github.io/codegolf/keyspressed.html
-var keys = {};
-onkeydown = onkeyup = (e) => (keys[e.key] = e.type[5]);
+// Detect key presses up & down.
+// Modified from https://xem.github.io/codegolf/keyspressed.html
+var keysDown = {},
+  keysUp = {};
+onkeydown = (e) => e.repeat || (keysDown[e.key] = e.type[5]);
+onkeyup = (e) => (keysUp[e.key] = e.type[5]);
 
 const c = window.a.getContext("2d");
 
@@ -44,11 +47,12 @@ wall.shape = new Shape([
 ]);
 // Infinite mass == immobile
 wall.invMass = 0;
-wall.pos = new Vector(340, 720);
+wall.pos = new Vector(340, 520);
 wall.isRigid = true;
 wall.bounciness = Settings.wallBounciness;
 
 let shotAngle: number = 0.48;
+let shots: number = 0;
 
 const objects = [{ body: player }, { body: wall }];
 
@@ -60,7 +64,8 @@ const loop = (thisFrameMs: number) => {
   requestAnimationFrame(loop);
 
   // Input
-  if (keys[" "]) {
+  if (keysDown[" "]) {
+    shots++;
     // TODO: Calculate based on angle
     player.velocity = new Vector(0, -700).rotate(
       Math.cos(shotAngle),
@@ -93,6 +98,15 @@ const loop = (thisFrameMs: number) => {
     c.stroke();
     c.restore();
   }
+
+  c.save();
+  c.font = "48px sans";
+  c.fillText(`shots: ${shots}`, 10, 50);
+  c.restore();
+
+  // Reset the key input now that we've read it
+  keysDown = {};
+  keysUp = {};
 };
 
 requestAnimationFrame(loop);
