@@ -12,6 +12,33 @@ var keysDown = {},
 onkeydown = (e) => e.repeat || (keysDown[e.key] = e.type[5]);
 onkeyup = (e) => (keysUp[e.key] = e.type[5]);
 
+let dragPos = new Vector(0, 0);
+let dragStartPos = new Vector(0, 0);
+let dragEndPos = new Vector(0, 0);
+
+const getDragPos = (evt) => {
+  var rect = window.a.getBoundingClientRect();
+  return new Vector(
+    ((evt.clientX - rect.left) / (rect.right - rect.left)) * window.a.width,
+    ((evt.clientY - rect.top) / (rect.bottom - rect.top)) * window.a.height
+  );
+};
+
+// TODO: debounce this?
+window.a.onmousemove = (evt) => {
+  dragPos = getDragPos(evt);
+};
+
+window.a.onmousedown = (evt) => {
+  dragStartPos = getDragPos(evt);
+  keysDown["drag"] = true;
+};
+
+window.a.onmouseup = (evt) => {
+  dragEndPos = getDragPos(evt);
+  keysUp["drag"] = true;
+};
+
 const c = window.a.getContext("2d");
 
 const player = new Body(Settings.ballMass);
@@ -53,6 +80,7 @@ wall.bounciness = Settings.wallBounciness;
 
 let shotAngle: number = 0.48;
 let shots: number = 0;
+let dragging: boolean = false;
 
 const objects = [{ body: player }, { body: wall }];
 
@@ -64,13 +92,15 @@ const loop = (thisFrameMs: number) => {
   requestAnimationFrame(loop);
 
   // Input
-  if (keysDown[" "]) {
+  // Started a drag
+  if (keysDown["drag"]) {
+    dragging = true;
+  }
+
+  if (keysUp["drag"]) {
+    dragging = false;
     shots++;
-    // TODO: Calculate based on angle
-    player.velocity = new Vector(0, -700).rotate(
-      Math.cos(shotAngle),
-      Math.sin(shotAngle)
-    );
+    player.velocity = dragStartPos.subtract(dragEndPos);
   }
 
   // Physics updates
@@ -100,8 +130,13 @@ const loop = (thisFrameMs: number) => {
   }
 
   c.save();
-  c.font = "48px sans";
-  c.fillText(`shots: ${shots}`, 10, 50);
+  c.font = "28px sans";
+  c.fillText(`shots: ${shots} angle: ${shotAngle}`, 10, 50);
+  c.fillText(
+    `drag: ${dragPos.x} ${dragPos.y}, dragStart: ${dragStartPos.x} ${dragStartPos.y}, dragEnd: ${dragEndPos.x} ${dragEndPos.y}`,
+    10,
+    80
+  );
   c.restore();
 
   // Reset the key input now that we've read it
