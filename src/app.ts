@@ -14,7 +14,6 @@ onkeyup = (e) => (keysUp[e.key] = e.type[5]);
 
 let dragPos = new Vector(0, 0);
 let dragStartPos = new Vector(0, 0);
-let dragEndPos = new Vector(0, 0);
 
 const getDragPos = (evt) => {
   var rect = window.a.getBoundingClientRect();
@@ -35,7 +34,6 @@ window.a.onmousedown = (evt) => {
 };
 
 window.a.onmouseup = (evt) => {
-  dragEndPos = getDragPos(evt);
   keysUp["drag"] = true;
 };
 
@@ -78,9 +76,31 @@ wall.pos = new Vector(340, 520);
 wall.isRigid = true;
 wall.bounciness = Settings.wallBounciness;
 
-let shotAngle: number = 0.48;
-let shots: number = 0;
 let dragging: boolean = false;
+let shots: number = 0;
+
+// Measured in pixels
+const minDragDistance = 20;
+const maxDragDistance = 220;
+let dragVector = new Vector(0, 0);
+
+// Measured in meters/sec
+const minShotSpeed = 20;
+const maxShotSpeed = 820;
+let shotSpeed: number = 0;
+
+const updateShotFromDrag = () => {
+  dragVector = dragStartPos.subtract(dragPos);
+  const dragDistance = Math.min(dragVector.length(), maxDragDistance);
+  if (dragDistance >= minDragDistance) {
+    shotSpeed =
+      minShotSpeed +
+      (dragDistance / (maxDragDistance - minDragDistance)) *
+        (maxShotSpeed - minShotSpeed);
+  } else {
+    shotSpeed = 0;
+  }
+};
 
 const objects = [{ body: player }, { body: wall }];
 
@@ -97,10 +117,16 @@ const loop = (thisFrameMs: number) => {
     dragging = true;
   }
 
+  if (dragging) {
+    updateShotFromDrag();
+  }
+
   if (keysUp["drag"]) {
     dragging = false;
-    shots++;
-    player.velocity = dragStartPos.subtract(dragEndPos);
+    if (shotSpeed) {
+      shots++;
+      player.velocity = dragVector.normal().multiply(shotSpeed);
+    }
   }
 
   // Physics updates
@@ -129,14 +155,29 @@ const loop = (thisFrameMs: number) => {
     c.restore();
   }
 
+  if (dragging) {
+    const shot = dragVector.normal().multiply(shotSpeed);
+    // Render the expected velocity vector
+    c.save();
+    c.translate(player.pos.x, player.pos.y);
+    c.beginPath();
+    c.moveTo(0, 0);
+    c.lineTo(shot.x, shot.y);
+    c.closePath();
+    c.stroke();
+    c.restore();
+  }
+
   c.save();
   c.font = "28px sans";
-  c.fillText(`shots: ${shots} angle: ${shotAngle}`, 10, 50);
-  c.fillText(
-    `drag: ${dragPos.x} ${dragPos.y}, dragStart: ${dragStartPos.x} ${dragStartPos.y}, dragEnd: ${dragEndPos.x} ${dragEndPos.y}`,
-    10,
-    80
-  );
+  c.fillText(`shots: ${shots}`, 10, 50);
+  if (dragging) {
+    c.fillText(
+      `drag: ${dragPos.x} ${dragPos.y}, dragStart: ${dragStartPos.x} ${dragStartPos.y}`,
+      10,
+      80
+    );
+  }
   c.restore();
 
   // Reset the key input now that we've read it

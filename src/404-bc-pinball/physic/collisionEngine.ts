@@ -34,7 +34,7 @@ function resolveWithFriction(
   // Calculate relative velocity in terms of the normal direction
   const velAlongNormal = relativeVelocity.dot(normal);
 
-  console.log({ mtv: normal, rv: relativeVelocity, normal, velAlongNormal });
+  //console.log({ mtv: normal, rv: relativeVelocity, normal, velAlongNormal });
 
   // Do not resolve if velocities are separating
   if (velAlongNormal > 0) {
@@ -105,6 +105,7 @@ function resolveWithFriction(
   A.velocity = A.velocity.subtract(impulse.multiply(A.invMass));
   B.velocity = B.velocity.add(impulse.multiply(B.invMass));
 
+  /*
   console.log({
     e,
     j: impulseMagnitude,
@@ -113,6 +114,7 @@ function resolveWithFriction(
     velocityBefore,
     velocity: A.velocity,
   });
+  */
 
   return distance;
 }
