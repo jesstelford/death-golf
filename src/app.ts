@@ -109,7 +109,7 @@ const updateShotFromDrag = () => {
   }
 };
 
-const objects = [{ body: player }, { body: wall }];
+const objects = [player, wall];
 
 const targetFrameTimeMs = 1;
 var accumFrameTimeMs = 0;
@@ -170,9 +170,9 @@ const loop = (thisFrameMs: number) => {
   window.a.width ^= 0;
   for (let i = objects.length; i--; ) {
     c.save();
-    c.translate(objects[i].body.pos.x, objects[i].body.pos.y);
+    c.translate(objects[i].pos.x, objects[i].pos.y);
     c.beginPath();
-    let verts = objects[i].body.shape.vertices;
+    let verts = objects[i].shape.vertices;
     c.moveTo(verts[0].x, verts[0].y);
     for (let t = 1; t < verts.length; t++) {
       c.lineTo(verts[t].x, verts[t].y);
