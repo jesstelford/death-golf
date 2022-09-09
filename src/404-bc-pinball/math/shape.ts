@@ -1,10 +1,29 @@
 import { Vector } from "./vector";
 
+var computeAxes = (shape: Shape, i?) => {
+  // normal of each face toward outside of shape
+  for (i = 0; i < shape.vertices.length; i++) {
+    shape.axes[i] = shape.vertices[(i + 1) % shape.vertices.length]
+      .subtract(shape.vertices[i])
+      .normal()
+      .tangent();
+  }
+};
+
 export class Shape {
   vertices: Vector[] = [];
 
+  // Separating axes.
+  // Ie; Normal of each face toward outside of shape.
+  // NOTE: Must be updated when vertices are updated so that their positions
+  // relative to eachother change (such as rotated)
+  // NOTE2: Doesn't need to be updated when translated (the axes are based on
+  // position of vertices relative to eachother)
+  axes: Vector[] = [];
+
   constructor(vertices: Vector[]) {
     this.vertices = vertices;
+    computeAxes(this);
   }
 
   project(vector: Vector) {
@@ -15,7 +34,7 @@ export class Shape {
         if (value > minMax.max) minMax.max = value;
         return minMax;
       },
-      { min: this.vertices[0].dot(vector), max: this.vertices[0].dot(vector) }
+      { min: Infinity, max: -Infinity }
     );
   }
 
@@ -27,6 +46,7 @@ export class Shape {
     const c = Math.cos(angle);
     const s = Math.sin(angle);
     this.vertices = this.vertices.map((vertex) => vertex.rotate(c, s, center));
+    computeAxes(this);
   }
 
   hFlip(axe: number) {

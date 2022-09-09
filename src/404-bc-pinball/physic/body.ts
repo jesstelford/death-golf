@@ -16,8 +16,6 @@ export class Body {
   bounciness: number;
   staticFrictionCoefficient: number;
   dynamicFrictionCoefficient: number;
-  ignoreCollision: boolean;
-  isRigid: boolean;
   restThreshold: number;
 
   _restFrames: number;
@@ -35,8 +33,6 @@ export class Body {
     this.drag = 0.05;
     this.staticFrictionCoefficient = 0.04;
     this.dynamicFrictionCoefficient = 0.02;
-    this.ignoreCollision = false;
-    this.isRigid = true;
     this.restThreshold = 1;
 
     this._restFrames = 0;

@@ -119,17 +119,6 @@ function resolveWithFriction(
   return distance;
 }
 
-function getSeparatingAxes(shape: Shape) {
-  let axes = [];
-  for (let i = 0; i < shape.vertices.length; i++) {
-    const v1 = shape.vertices[i];
-    const v2 = shape.vertices[(i + 1) % shape.vertices.length];
-    const edge = v2.subtract(v1).normal();
-    axes[i] = edge.tangent();
-  }
-  return axes;
-}
-
 function getOverlap(
   projection1: { min: number; max: number },
   projection2: { min: number; max: number }
@@ -143,34 +132,35 @@ function getOverlap(
   return sign * (max - min);
 }
 
-function satCollide(shape1: Shape, shape2: Shape) {
-  const axes = getSeparatingAxes(shape1).concat(getSeparatingAxes(shape2));
+function satCollide(shape1: Shape, shape2: Shape): [Vector?, number?] {
+  const axes = shape1.axes.concat(shape2.axes);
   let minVector: Vector = null;
-  let minOverlap = null;
+  let minOverlap = -Infinity;
   for (let axe of axes) {
     const overlap = getOverlap(shape1.project(axe), shape2.project(axe));
-    if (overlap != null) {
-      if (minOverlap == null || Math.abs(overlap) < Math.abs(minOverlap)) {
-        minOverlap = overlap;
-        minVector = axe;
-      }
-    } else {
+    if (overlap == null) {
       return [];
     }
+    if (Math.abs(overlap) < Math.abs(minOverlap)) {
+      minOverlap = overlap;
+      minVector = axe;
+    }
+  }
+  if (Math.sign(minOverlap) === -1) {
+    minOverlap *= -1;
+    minVector = minVector.multiply(-1);
   }
   return [minVector, minOverlap];
 }
 
 export function collider(body1: Body, body2: Body) {
-  if (body2.ignoreCollision) return;
   const [normal, distance] = satCollide(body1.getShape(), body2.getShape());
   if (normal != null) {
     if (body2.onCollision != undefined)
       body2.onCollision(normal.multiply(distance));
-    if (body2.isRigid) {
-      const speed = resolveWithFriction(body1, body2, normal, distance);
-      if (body2.onCollisionResolved != undefined)
-        body2.onCollisionResolved(speed);
     }
+    const speed = resolveWithFriction(body1, body2, normal, distance);
+    if (body2.onCollisionResolved != undefined)
+      body2.onCollisionResolved(speed);
   }
 }

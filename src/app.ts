@@ -65,6 +65,7 @@ player.dynamicFrictionCoefficient = BALL_DYNAMIC_FRICTION;
 
 // zero mass == immobile
 const wall = new Body(0);
+// anti-clockwise
 wall.shape = new Shape([
   new Vector(0, 0),
   new Vector(0, 50),
