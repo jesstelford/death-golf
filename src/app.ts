@@ -13,6 +13,8 @@ const BALL_STATIC_FRICTION = 0.04;
 const BALL_DYNAMIC_FRICTION = 0.02;
 const GRAVITY = 980; // 9.8m2/s
 
+const canvas = window.a;
+
 // Detect key presses up & down.
 // Modified from https://xem.github.io/codegolf/keyspressed.html
 var keysDown = {},
@@ -24,28 +26,39 @@ let dragPos = new Vector(0, 0);
 let dragStartPos = new Vector(0, 0);
 
 const getDragPos = (evt) => {
-  var rect = window.a.getBoundingClientRect();
+  var rect = canvas.getBoundingClientRect();
   return new Vector(
-    ((evt.clientX - rect.left) / (rect.right - rect.left)) * window.a.width,
-    ((evt.clientY - rect.top) / (rect.bottom - rect.top)) * window.a.height
+    ((evt.clientX - rect.left) / (rect.right - rect.left)) * canvas.width,
+    ((evt.clientY - rect.top) / (rect.bottom - rect.top)) * canvas.height
   );
 };
 
 // TODO: debounce this?
-window.a.onmousemove = (evt) => {
+canvas.onmousemove = (evt) => {
   dragPos = getDragPos(evt);
 };
 
-window.a.onmousedown = (evt) => {
+canvas.onmousedown = (evt) => {
   dragStartPos = getDragPos(evt);
   keysDown["drag"] = true;
 };
 
-window.a.onmouseup = (evt) => {
+canvas.onmouseup = (evt) => {
   keysUp["drag"] = true;
 };
 
-const c = window.a.getContext("2d");
+const c = canvas.getContext("2d");
+if (window.devicePixelRatio > 1) {
+  var canvasWidth = canvas.width;
+  var canvasHeight = canvas.height;
+
+  canvas.width = canvasWidth * window.devicePixelRatio;
+  canvas.height = canvasHeight * window.devicePixelRatio;
+  canvas.style.width = canvasWidth + "px";
+  canvas.style.height = canvasHeight + "px";
+
+  c.scale(window.devicePixelRatio, window.devicePixelRatio);
+}
 
 const player = new Body(BALL_MASS, (otherBody: Body) => {
   if (otherBody.kind === "holeDetector") {
@@ -98,8 +111,27 @@ function createHoleDetector() {
   hole.kind = "holeDetector";
   return hole;
 }
-
 const holeDetector = createHoleDetector();
+
+function createFromSVG() {
+  // For each child of the svg
+  return Array.from(document.querySelectorAll("svg > *")).map(
+    (el: SVGGeometryElement) =>
+      // Create a new shape
+      new Shape(
+        // Consisting of vertices that match the browser's interpretation of
+        // "total length" of the svg path
+        [...Array(Math.ceil(el.getTotalLength()))].map((v, i) => {
+          // Grab the coordinates of the point from the browser (relative to the
+          // svg's viewBox, I think)
+          const { x, y } = el.getPointAtLength(i);
+          // Turn them into a vector
+          return new Vector(x, y);
+        })
+      )
+  );
+}
+const shapes = createFromSVG();
 
 let dragging: boolean = false;
 let shots: number = 0;
@@ -194,7 +226,26 @@ const loop = (thisFrameMs: number) => {
   }
 
   // Drawing
-  window.a.width ^= 0;
+  // -------
+
+  // Clear the canvas: https://stackoverflow.com/a/6722031
+  // Store the current transformation matrix, so we can clear the whole thing
+  // without worrying about any transforms, etc, that have been applied
+  c.save();
+
+  // Use the identity matrix while clearing the canvas
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  c.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Restore the transform
+  c.restore();
+
+  c.save();
+
+  // avoid antialiasing by drawing directly in the middle of pixels
+  c.translate(0.5, 0.5);
+
+  // Draw all the objects in the world
   for (let i = objects.length; i--; ) {
     c.save();
     c.translate(objects[i].pos.x, objects[i].pos.y);
@@ -206,6 +257,20 @@ const loop = (thisFrameMs: number) => {
     }
     c.closePath();
     c.stroke();
+    c.restore();
+  }
+
+  // Draw all the display-only shapes
+  for (let i = shapes.length; i--; ) {
+    c.save();
+    c.beginPath();
+    let verts = shapes[i].vertices;
+    c.moveTo(verts[0].x, verts[0].y);
+    for (let t = 1; t < verts.length; t++) {
+      c.lineTo(verts[t].x, verts[t].y);
+    }
+    c.closePath();
+    c.fill();
     c.restore();
   }
 
@@ -235,6 +300,7 @@ const loop = (thisFrameMs: number) => {
       80
     );
   }
+  c.restore();
   c.restore();
 
   // Reset the key input now that we've read it
