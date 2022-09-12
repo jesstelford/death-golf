@@ -616,8 +616,8 @@
       radius,
       radius,
       // An approximation of a circle in 32 points
-      [...Array(6)].map((_, i) =>
-        add(center, rotate(Vec2(0, radius), Vec2(0, 0), (i * 2 * Math.PI) / 6))
+      [...Array(32)].map((_, i) =>
+        add(center, rotate(Vec2(0, radius), Vec2(0, 0), (i * 2 * Math.PI) / 32))
       )
     );
   };
@@ -662,6 +662,6 @@
   r = Rectangle(Vec2(10, 330), 20, 100, 0, 0.9, 1, 0.5);
   r.name = "wall";
 
-  var ball = Circle(Vec2(600, 50), 10, 50, 0.3, 0.7, 0.1);
+  var ball = Circle(Vec2(0, 0), 10, 50, 0.3, 0.7, 0.1);
   ball.name = "ball";
 </script>

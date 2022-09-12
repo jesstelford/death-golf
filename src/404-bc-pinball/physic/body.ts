@@ -17,13 +17,13 @@ export class Body {
   staticFrictionCoefficient: number;
   dynamicFrictionCoefficient: number;
   restThreshold: number;
+  kind: string;
 
   _restFrames: number;
 
-  onCollision: (mtv: Vector) => void;
-  onCollisionResolved: (speed: number) => void;
+  onCollision: (otherBody: Body, speed?: number) => void;
 
-  constructor(mass: number) {
+  constructor(mass: number, onCollision = (_, __) => {}) {
     this.pos = Vector.z();
     this.velocity = Vector.z();
     this.invMass = mass === 0 ? 0 : 1 / mass;
@@ -34,6 +34,7 @@ export class Body {
     this.staticFrictionCoefficient = 0.04;
     this.dynamicFrictionCoefficient = 0.02;
     this.restThreshold = 1;
+    this.onCollision = onCollision;
 
     this._restFrames = 0;
   }

@@ -38,7 +38,7 @@ function resolveWithFriction(
 
   // Do not resolve if velocities are separating
   if (velAlongNormal > 0) {
-    return;
+    return null;
   }
 
   // Calculate restitution
@@ -105,17 +105,6 @@ function resolveWithFriction(
   A.velocity = A.velocity.subtract(impulse.multiply(A.invMass));
   B.velocity = B.velocity.add(impulse.multiply(B.invMass));
 
-  /*
-  console.log({
-    e,
-    j: impulseMagnitude,
-    impulse,
-    invMass: A.invMass,
-    velocityBefore,
-    velocity: A.velocity,
-  });
-  */
-
   return distance;
 }
 
@@ -156,11 +145,9 @@ function satCollide(shape1: Shape, shape2: Shape): [Vector?, number?] {
 export function collider(body1: Body, body2: Body) {
   const [normal, distance] = satCollide(body1.getShape(), body2.getShape());
   if (normal != null) {
-    if (body2.onCollision != undefined)
-      body2.onCollision(normal.multiply(distance));
-    }
     const speed = resolveWithFriction(body1, body2, normal, distance);
-    if (body2.onCollisionResolved != undefined)
-      body2.onCollisionResolved(speed);
+    if (speed !== null) {
+      body1.onCollision(body2, speed);
+    }
   }
 }

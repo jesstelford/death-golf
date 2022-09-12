@@ -4,13 +4,14 @@ import { Shape } from "./404-bc-pinball/math/shape";
 import { collider } from "./404-bc-pinball/physic/collisionEngine";
 
 // Constants
-const WALL_BOUNCINESS = 30000;
+const WALL_BOUNCINESS = 3;
+const HOLE_DETECTOR_BOUNCINESS = 0;
 const BALL_MASS = 20;
 const BALL_RADIUS = 10;
 const BALL_BOUNCINESS = 0.6;
 const BALL_STATIC_FRICTION = 0.04;
 const BALL_DYNAMIC_FRICTION = 0.02;
-const GRAVITY = 1000;
+const GRAVITY = 980; // 9.8m2/s
 
 // Detect key presses up & down.
 // Modified from https://xem.github.io/codegolf/keyspressed.html
@@ -46,7 +47,11 @@ window.a.onmouseup = (evt) => {
 
 const c = window.a.getContext("2d");
 
-const player = new Body(BALL_MASS);
+const player = new Body(BALL_MASS, (otherBody: Body) => {
+  if (otherBody.kind === "holeDetector") {
+    console.log("collided with hole");
+  }
+});
 player.pos = new Vector(340, 400);
 player.velocity = new Vector(100, 0);
 player.bounciness = BALL_BOUNCINESS;
@@ -54,7 +59,8 @@ player.shape = new Shape(
   // An approximation of a circle in 32 points
   [...Array(32)].map(
     (r, i) => (
-      (r = (i * 2 * Math.PI) / 32),
+      // anti-clockwise
+      (r = (-i * 2 * Math.PI) / 32),
       new Vector(0, BALL_RADIUS).rotate(Math.cos(r), Math.sin(r))
     )
   )
@@ -62,6 +68,7 @@ player.shape = new Shape(
 player.applyField(new Vector(0, GRAVITY / player.invMass));
 player.staticFrictionCoefficient = BALL_STATIC_FRICTION;
 player.dynamicFrictionCoefficient = BALL_DYNAMIC_FRICTION;
+player.kind = "player";
 
 // zero mass == immobile
 const wall = new Body(0);
@@ -73,8 +80,26 @@ wall.shape = new Shape([
   new Vector(400, 0),
 ]);
 wall.pos = new Vector(340, 520);
-wall.isRigid = true;
 wall.bounciness = WALL_BOUNCINESS;
+wall.kind = "wall";
+
+function createHoleDetector() {
+  // TODO: Needs to be a hole with sides, etc
+  const hole = new Body(0);
+  // anti-clockwise
+  hole.shape = new Shape([
+    new Vector(0, 0),
+    new Vector(0, 200),
+    new Vector(20, 200),
+    new Vector(20, 0),
+  ]);
+  hole.pos = new Vector(540, 315);
+  hole.bounciness = HOLE_DETECTOR_BOUNCINESS;
+  hole.kind = "holeDetector";
+  return hole;
+}
+
+const holeDetector = createHoleDetector();
 
 let dragging: boolean = false;
 let shots: number = 0;
@@ -110,7 +135,7 @@ const updateShotFromDrag = () => {
   }
 };
 
-const objects = [player, wall];
+const objects = [player, wall, holeDetector];
 
 const targetFrameTimeMs = 1;
 var accumFrameTimeMs = 0;
@@ -164,6 +189,7 @@ const loop = (thisFrameMs: number) => {
     accumFrameTimeMs -= targetFrameTimeMs;
     // Do updates based on targetFrameTimeMs ms passing
     player.update(targetFrameTimeMs / 1000);
+    collider(player, holeDetector);
     collider(player, wall);
   }
 
