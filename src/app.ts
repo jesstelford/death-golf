@@ -116,9 +116,10 @@ const holeDetector = createHoleDetector();
 function createFromSVG() {
   // For each child of the svg
   return Array.from(document.querySelectorAll("svg > *")).map(
-    (el: SVGGeometryElement) =>
+    (el: SVGGeometryElement) => ({
+      path2D: new Path2D(el.getAttribute("d")),
       // Create a new shape
-      new Shape(
+      shape: new Shape(
         // Consisting of vertices that match the browser's interpretation of
         // "total length" of the svg path
         [...Array(Math.ceil(el.getTotalLength()))].map((v, i) => {
@@ -128,7 +129,8 @@ function createFromSVG() {
           // Turn them into a vector
           return new Vector(x, y);
         })
-      )
+      ),
+    })
   );
 }
 const shapes = createFromSVG();
@@ -263,14 +265,7 @@ const loop = (thisFrameMs: number) => {
   // Draw all the display-only shapes
   for (let i = shapes.length; i--; ) {
     c.save();
-    c.beginPath();
-    let verts = shapes[i].vertices;
-    c.moveTo(verts[0].x, verts[0].y);
-    for (let t = 1; t < verts.length; t++) {
-      c.lineTo(verts[t].x, verts[t].y);
-    }
-    c.closePath();
-    c.fill();
+    c.fill(shapes[i].path2D);
     c.restore();
   }
 

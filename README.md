@@ -54,3 +54,6 @@ collision, and various special game objects.
    1. Select "Plain SVG"
    1. Name the level in numerical order with a leading zero
    1. "Export"
+1. Add to game
+   1. Process the file with `svgo`: `yarn svgo -i levels/<filename>.svg`
+   1. Add the result to the `src/index.html`
