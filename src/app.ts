@@ -72,6 +72,18 @@ function strokeRenderer(c: CanvasRenderingContext2D) {
   c.stroke();
 }
 
+function fillRenderer(c: CanvasRenderingContext2D) {
+  c.beginPath();
+  let verts = this.getVertices();
+  c.moveTo(verts[0].x, verts[0].y);
+  for (let t = 1; t < verts.length; t++) {
+    c.lineTo(verts[t].x, verts[t].y);
+  }
+  c.closePath();
+  c.fill();
+  c.stroke();
+}
+
 const player = new Body(
   BALL_MASS,
   // An approximation of a circle in 32 points
@@ -162,7 +174,7 @@ function createFromSVG() {
               convexVerts.map(([x, y]) => new Vector(x, y))
             );
             body.bounciness = WALL_BOUNCINESS;
-            body.render = strokeRenderer;
+            body.render = fillRenderer;
             body.kind = "convex-decomp";
             return body;
           }
