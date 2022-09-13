@@ -1,7 +1,8 @@
 import { Vector } from "./404-bc-pinball/math/vector";
 import { Body } from "./404-bc-pinball/physic/body";
-import { Shape } from "./404-bc-pinball/math/shape";
 import { collider } from "./404-bc-pinball/physic/collisionEngine";
+import { simplify } from "./poly-simplify";
+import { quickDecomp, makeCCW } from "./poly-decomp";
 
 // Constants
 const WALL_BOUNCINESS = 3;
@@ -60,15 +61,19 @@ if (window.devicePixelRatio > 1) {
   c.scale(window.devicePixelRatio, window.devicePixelRatio);
 }
 
-const player = new Body(BALL_MASS, (otherBody: Body) => {
-  if (otherBody.kind === "holeDetector") {
-    console.log("collided with hole");
+function strokeRenderer(c: CanvasRenderingContext2D) {
+  c.beginPath();
+  let verts = this.getVertices();
+  c.moveTo(verts[0].x, verts[0].y);
+  for (let t = 1; t < verts.length; t++) {
+    c.lineTo(verts[t].x, verts[t].y);
   }
-});
-player.pos = new Vector(340, 400);
-player.velocity = new Vector(100, 0);
-player.bounciness = BALL_BOUNCINESS;
-player.shape = new Shape(
+  c.closePath();
+  c.stroke();
+}
+
+const player = new Body(
+  BALL_MASS,
   // An approximation of a circle in 32 points
   [...Array(32)].map(
     (r, i) => (
@@ -78,62 +83,94 @@ player.shape = new Shape(
     )
   )
 );
+player.onCollision = (otherBody: Body) => {
+  if (otherBody.kind === "holeDetector") {
+    console.log("collided with hole");
+  }
+};
+player.render = strokeRenderer;
+player.pos = new Vector(140, 40);
+player.velocity = new Vector(100, 0);
+player.bounciness = BALL_BOUNCINESS;
 player.applyField(new Vector(0, GRAVITY / player.invMass));
 player.staticFrictionCoefficient = BALL_STATIC_FRICTION;
 player.dynamicFrictionCoefficient = BALL_DYNAMIC_FRICTION;
 player.kind = "player";
 
 // zero mass == immobile
-const wall = new Body(0);
-// anti-clockwise
-wall.shape = new Shape([
-  new Vector(0, 0),
-  new Vector(0, 50),
-  new Vector(400, 50),
-  new Vector(400, 0),
-]);
+const wall = new Body(
+  0,
+  // anti-clockwise
+  [new Vector(0, 0), new Vector(0, 50), new Vector(400, 50), new Vector(400, 0)]
+);
 wall.pos = new Vector(340, 520);
 wall.bounciness = WALL_BOUNCINESS;
+wall.render = strokeRenderer;
 wall.kind = "wall";
 
 function createHoleDetector() {
   // TODO: Needs to be a hole with sides, etc
-  const hole = new Body(0);
-  // anti-clockwise
-  hole.shape = new Shape([
-    new Vector(0, 0),
-    new Vector(0, 200),
-    new Vector(20, 200),
-    new Vector(20, 0),
-  ]);
+  const hole = new Body(
+    0,
+    // anti-clockwise
+    [
+      new Vector(0, 0),
+      new Vector(0, 200),
+      new Vector(20, 200),
+      new Vector(20, 0),
+    ]
+  );
   hole.pos = new Vector(540, 315);
   hole.bounciness = HOLE_DETECTOR_BOUNCINESS;
+  hole.render = strokeRenderer;
   hole.kind = "holeDetector";
   return hole;
 }
 const holeDetector = createHoleDetector();
 
 function createFromSVG() {
+  let player;
   // For each child of the svg
-  return Array.from(document.querySelectorAll("svg > *")).map(
-    (el: SVGGeometryElement) => ({
-      path2D: new Path2D(el.getAttribute("d")),
-      // Create a new shape
-      shape: new Shape(
-        // Consisting of vertices that match the browser's interpretation of
-        // "total length" of the svg path
-        [...Array(Math.ceil(el.getTotalLength()))].map((v, i) => {
+  return {
+    player,
+    objects: Array.from(document.querySelectorAll("svg > *")).flatMap(
+      (el: SVGGeometryElement) => {
+        let verts: Array<{ x: number; y: number }> = [
+          ...Array(Math.ceil(el.getTotalLength())),
+        ].map(
           // Grab the coordinates of the point from the browser (relative to the
           // svg's viewBox, I think)
-          const { x, y } = el.getPointAtLength(i);
-          // Turn them into a vector
-          return new Vector(x, y);
-        })
-      ),
-    })
-  );
+          (_, i) => el.getPointAtLength(i)
+        );
+
+        // The collision geometry is a simplified version
+        const simplifiedLine = simplify(
+          verts,
+          // Because we scale the canvas, we want our threshold to be small enough
+          // that it matches real display pixels, not "world" pixels
+          1 / window.devicePixelRatio
+        );
+
+        //const path2D = new Path2D(el.getAttribute("d"));
+
+        // Create a new shape per convex thingo
+        return quickDecomp(simplifiedLine.map(({ x, y }) => [x, y])).map(
+          (convexVerts) => {
+            const body = new Body(
+              0,
+              // anti-clockwise
+              convexVerts.map(([x, y]) => new Vector(x, y))
+            );
+            body.bounciness = WALL_BOUNCINESS;
+            body.render = strokeRenderer;
+            body.kind = "convex-decomp";
+            return body;
+          }
+        );
+      }
+    ),
+  };
 }
-const shapes = createFromSVG();
 
 let dragging: boolean = false;
 let shots: number = 0;
@@ -169,11 +206,26 @@ const updateShotFromDrag = () => {
   }
 };
 
-const objects = [player, wall, holeDetector];
+const svgObjects = createFromSVG();
+const objects = [wall, holeDetector, ...svgObjects.objects];
 
 const targetFrameTimeMs = 1;
 var accumFrameTimeMs = 0;
 var lastFrameMs = performance.now();
+
+const clearCanvas = (c: CanvasRenderingContext2D) => {
+  // Clear the canvas: https://stackoverflow.com/a/6722031
+  // Store the current transformation matrix, so we can clear the whole thing
+  // without worrying about any transforms, etc, that have been applied
+  c.save();
+
+  // Use the identity matrix while clearing the canvas
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  c.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Restore the transform
+  c.restore();
+};
 
 const loop = (thisFrameMs: number) => {
   requestAnimationFrame(loop);
@@ -223,24 +275,14 @@ const loop = (thisFrameMs: number) => {
     accumFrameTimeMs -= targetFrameTimeMs;
     // Do updates based on targetFrameTimeMs ms passing
     player.update(targetFrameTimeMs / 1000);
-    collider(player, holeDetector);
-    collider(player, wall);
+    for (let i = objects.length; i--; ) {
+      collider(player, objects[i]);
+    }
   }
 
   // Drawing
   // -------
-
-  // Clear the canvas: https://stackoverflow.com/a/6722031
-  // Store the current transformation matrix, so we can clear the whole thing
-  // without worrying about any transforms, etc, that have been applied
-  c.save();
-
-  // Use the identity matrix while clearing the canvas
-  c.setTransform(1, 0, 0, 1, 0, 0);
-  c.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Restore the transform
-  c.restore();
+  clearCanvas(c);
 
   c.save();
 
@@ -248,24 +290,13 @@ const loop = (thisFrameMs: number) => {
   c.translate(0.5, 0.5);
 
   // Draw all the objects in the world
+  c.save();
+  player.render(c);
+  c.restore();
+
   for (let i = objects.length; i--; ) {
     c.save();
-    c.translate(objects[i].pos.x, objects[i].pos.y);
-    c.beginPath();
-    let verts = objects[i].shape.vertices;
-    c.moveTo(verts[0].x, verts[0].y);
-    for (let t = 1; t < verts.length; t++) {
-      c.lineTo(verts[t].x, verts[t].y);
-    }
-    c.closePath();
-    c.stroke();
-    c.restore();
-  }
-
-  // Draw all the display-only shapes
-  for (let i = shapes.length; i--; ) {
-    c.save();
-    c.fill(shapes[i].path2D);
+    objects[i].render(c);
     c.restore();
   }
 

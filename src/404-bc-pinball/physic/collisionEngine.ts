@@ -1,5 +1,4 @@
 import type { Body } from "../physic/body";
-import type { Shape } from "../math/shape";
 import type { Vector } from "../math/vector";
 
 function resolveWithFriction(
@@ -121,12 +120,12 @@ function getOverlap(
   return sign * (max - min);
 }
 
-function satCollide(shape1: Shape, shape2: Shape): [Vector?, number?] {
-  const axes = shape1.axes.concat(shape2.axes);
+function satCollide(body1: Body, body2: Body): [Vector?, number?] {
+  const axes = body1.axes.concat(body2.axes);
   let minVector: Vector = null;
   let minOverlap = -Infinity;
   for (let axe of axes) {
-    const overlap = getOverlap(shape1.project(axe), shape2.project(axe));
+    const overlap = getOverlap(body1.project(axe), body2.project(axe));
     if (overlap == null) {
       return [];
     }
@@ -143,7 +142,7 @@ function satCollide(shape1: Shape, shape2: Shape): [Vector?, number?] {
 }
 
 export function collider(body1: Body, body2: Body) {
-  const [normal, distance] = satCollide(body1.getShape(), body2.getShape());
+  const [normal, distance] = satCollide(body1, body2);
   if (normal != null) {
     const speed = resolveWithFriction(body1, body2, normal, distance);
     if (speed !== null) {
