@@ -49,17 +49,18 @@ canvas.onmouseup = (evt) => {
 };
 
 const c = canvas.getContext("2d");
-if (window.devicePixelRatio > 1) {
-  var canvasWidth = canvas.width;
-  var canvasHeight = canvas.height;
 
+const setCanvasDimensions = () => {
+  var canvasWidth = window.innerWidth;
+  var canvasHeight = window.innerHeight;
   canvas.width = canvasWidth * window.devicePixelRatio;
   canvas.height = canvasHeight * window.devicePixelRatio;
   canvas.style.width = canvasWidth + "px";
   canvas.style.height = canvasHeight + "px";
-
   c.scale(window.devicePixelRatio, window.devicePixelRatio);
-}
+};
+setCanvasDimensions();
+window.addEventListener("resize", setCanvasDimensions);
 
 function strokeRenderer(c: CanvasRenderingContext2D) {
   c.beginPath();
