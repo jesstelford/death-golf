@@ -86,8 +86,8 @@ export class Body {
     this.field = Vector.z();
     this.bounciness = 1;
     this.drag = 0.05;
-    this.staticFrictionCoefficient = 0.04;
-    this.dynamicFrictionCoefficient = 0.02;
+    this.staticFrictionCoefficient = 1;
+    this.dynamicFrictionCoefficient = 1;
     this.restThreshold = 2;
     this.onCollision = (_, __) => {};
     this.render = (_) => {};

@@ -8,10 +8,10 @@ import { quickDecomp, makeCCW } from "./poly-decomp";
 const WALL_BOUNCINESS = 3;
 const HOLE_DETECTOR_BOUNCINESS = 0;
 const BALL_MASS = 20;
-const BALL_RADIUS = 10;
-const BALL_BOUNCINESS = 0.6;
-const BALL_STATIC_FRICTION = 0.04;
-const BALL_DYNAMIC_FRICTION = 0.02;
+const BALL_RADIUS = 5;
+const BALL_BOUNCINESS = 0.3;
+const BALL_STATIC_FRICTION = 0.3;
+const BALL_DYNAMIC_FRICTION = 0.2;
 const GRAVITY = 980; // 9.8m2/s
 
 const canvas = window.a;
