@@ -12,7 +12,8 @@ var computeAxes = (vertices: Vector[], i?) => {
   return output;
 };
 
-const restedFramesMask = 0b11111;
+// Must be "resting" for this many update calls.
+const restedFramesMask = 0b1111111111111111111111111111;
 
 // From: https://stackoverflow.com/a/69761527
 function calculatePolygonCentroid(points: Vector[]) {
@@ -87,7 +88,7 @@ export class Body {
     this.drag = 0.05;
     this.staticFrictionCoefficient = 0.04;
     this.dynamicFrictionCoefficient = 0.02;
-    this.restThreshold = 1;
+    this.restThreshold = 2;
     this.onCollision = (_, __) => {};
     this.render = (_) => {};
 
