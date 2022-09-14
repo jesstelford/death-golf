@@ -5,7 +5,7 @@
     <br>
     Death Golf
     <br>
-    <sup><sub>A <a href="https://js13kgames.com">js13k</a> game in 0 bytes</sub></sup>
+    <sup><sub>A <a href="https://js13kgames.com">js13k</a> game in 5.7 Kb</sub></sup>
     <br>
     <kbd>By <a href="https://github.com/jesstelford">Jess Telford</a></kbd>
     <br>
@@ -14,7 +14,25 @@
   <br>
 </div>
 
-## Level Editing
+Super Stickman Golf meets Angry Birds: If the ball doesn't get destroyed at the end of each shot, you get a +1 penalty.
+
+Try to get to the hole in as few shots as possible.
+
+## Controls
+
+_Mouse required_
+
+When `resting` is shown, Click+drag mouse to aim / choose magnitude of your shot. Release to fire.
+
+To cancel your shot, drag the mouse on top of the ball and release.
+
+## js13kGames 2022 Submission
+
+The git tag [`js13k-2022-submission`](https://github.com/jesstelford/death-golf/tree/js13k-2022-submission) points to the exact commit submitted to the [js13kGames](https://github.com/jesstelford/death-golf/tree/js13k-2022-submission) competition.
+
+## Contributing
+
+### Level Editing
 
 Levels are created in Inkscape as paths (bezier curves compress the best),
 exported to svg, then saved to diskas `.svg` files. When a new level is started
