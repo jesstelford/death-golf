@@ -141,46 +141,69 @@ function createHoleDetector() {
 }
 const holeDetector = createHoleDetector();
 
-function createFromSVG() {
+function decomposeSVGToBodies(el: SVGGeometryElement) {
+  let verts: Array<{ x: number; y: number }> = [
+    ...Array(Math.ceil(el.getTotalLength())),
+  ].map(
+    // Grab the coordinates of the point from the browser (relative to the
+    // svg's viewBox, I think)
+    (_, i) => el.getPointAtLength(i)
+  );
+
+  // The collision geometry is a simplified version
+  const simplifiedLine = simplify(
+    verts,
+    // Because we scale the canvas, we want our threshold to be small enough
+    // that it matches real display pixels, not "world" pixels
+    1 / window.devicePixelRatio
+  );
+
+  //const path2D = new Path2D(el.getAttribute("d"));
+
+  // Create a new shape per convex thingo
+  return quickDecomp(simplifiedLine.map(({ x, y }) => [x, y])).map(
+    (convexVerts) => {
+      const body = new Body(
+        0,
+        // anti-clockwise
+        convexVerts.map(([x, y]) => new Vector(x, y))
+      );
+      body.bounciness = WALL_BOUNCINESS;
+      body.render = fillRenderer;
+      body.kind = "convex-decomp";
+      return body;
+    }
+  );
+}
+
+function loadFromSVG() {
+  Array.from(document.querySelectorAll("svg > *")).map(
+    (el: SVGGeometryElement) => {
+      // TODO
+      switch (el.dataset.kind) {
+        case "ball": {
+          console.log("ball");
+          break;
+        }
+        case "hole": {
+          console.log("hole");
+          break;
+        }
+        default: {
+          console.log("default");
+          decomposeSVGToBodies(el);
+          break;
+        }
+      }
+    }
+  );
+
   let player;
   // For each child of the svg
   return {
     player,
     objects: Array.from(document.querySelectorAll("svg > *")).flatMap(
-      (el: SVGGeometryElement) => {
-        let verts: Array<{ x: number; y: number }> = [
-          ...Array(Math.ceil(el.getTotalLength())),
-        ].map(
-          // Grab the coordinates of the point from the browser (relative to the
-          // svg's viewBox, I think)
-          (_, i) => el.getPointAtLength(i)
-        );
-
-        // The collision geometry is a simplified version
-        const simplifiedLine = simplify(
-          verts,
-          // Because we scale the canvas, we want our threshold to be small enough
-          // that it matches real display pixels, not "world" pixels
-          1 / window.devicePixelRatio
-        );
-
-        //const path2D = new Path2D(el.getAttribute("d"));
-
-        // Create a new shape per convex thingo
-        return quickDecomp(simplifiedLine.map(({ x, y }) => [x, y])).map(
-          (convexVerts) => {
-            const body = new Body(
-              0,
-              // anti-clockwise
-              convexVerts.map(([x, y]) => new Vector(x, y))
-            );
-            body.bounciness = WALL_BOUNCINESS;
-            body.render = fillRenderer;
-            body.kind = "convex-decomp";
-            return body;
-          }
-        );
-      }
+      (el: SVGGeometryElement) => decomposeSVGToBodies(el)
     ),
   };
 }
@@ -219,7 +242,7 @@ const updateShotFromDrag = () => {
   }
 };
 
-const svgObjects = createFromSVG();
+const svgObjects = loadFromSVG();
 const objects = [wall, holeDetector, ...svgObjects.objects];
 
 const targetFrameTimeMs = 1;
