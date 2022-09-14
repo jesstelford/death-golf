@@ -110,17 +110,6 @@ player.staticFrictionCoefficient = BALL_STATIC_FRICTION;
 player.dynamicFrictionCoefficient = BALL_DYNAMIC_FRICTION;
 player.kind = "player";
 
-// zero mass == immobile
-const wall = new Body(
-  0,
-  // anti-clockwise
-  [new Vector(0, 0), new Vector(0, 50), new Vector(400, 50), new Vector(400, 0)]
-);
-wall.pos = new Vector(340, 520);
-wall.bounciness = WALL_BOUNCINESS;
-wall.render = strokeRenderer;
-wall.kind = "wall";
-
 function createHoleDetector() {
   // TODO: Needs to be a hole with sides, etc
   const hole = new Body(
@@ -139,7 +128,6 @@ function createHoleDetector() {
   hole.kind = "holeDetector";
   return hole;
 }
-const holeDetector = createHoleDetector();
 
 function decomposeSVGToBodies(el: SVGGeometryElement) {
   let verts: Array<{ x: number; y: number }> = [
@@ -243,7 +231,7 @@ const updateShotFromDrag = () => {
 };
 
 const svgObjects = loadFromSVG();
-const objects = [wall, holeDetector, ...svgObjects.objects];
+const objects = [...svgObjects.objects];
 
 const targetFrameTimeMs = 1;
 var accumFrameTimeMs = 0;
