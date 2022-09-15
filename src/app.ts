@@ -85,51 +85,7 @@ function fillRenderer(c: CanvasRenderingContext2D) {
   c.stroke();
 }
 
-const player = new Body(
-  BALL_MASS,
-  // An approximation of a circle in 32 points
-  [...Array(32)].map(
-    (r, i) => (
-      // anti-clockwise
-      (r = (-i * 2 * Math.PI) / 32),
-      new Vector(0, BALL_RADIUS).rotate(Math.cos(r), Math.sin(r))
-    )
-  )
-);
-player.onCollision = (otherBody: Body) => {
-  if (otherBody.kind === "holeDetector") {
-    console.log("collided with hole");
-  }
-};
-player.render = strokeRenderer;
-player.pos = new Vector(140, 40);
-player.velocity = new Vector(100, 0);
-player.bounciness = BALL_BOUNCINESS;
-player.applyField(new Vector(0, GRAVITY / player.invMass));
-player.staticFrictionCoefficient = BALL_STATIC_FRICTION;
-player.dynamicFrictionCoefficient = BALL_DYNAMIC_FRICTION;
-player.kind = "player";
-
-function createHoleDetector() {
-  // TODO: Needs to be a hole with sides, etc
-  const hole = new Body(
-    0,
-    // anti-clockwise
-    [
-      new Vector(0, 0),
-      new Vector(0, 200),
-      new Vector(20, 200),
-      new Vector(20, 0),
-    ]
-  );
-  hole.pos = new Vector(540, 315);
-  hole.bounciness = HOLE_DETECTOR_BOUNCINESS;
-  hole.render = strokeRenderer;
-  hole.kind = "holeDetector";
-  return hole;
-}
-
-function decomposeSVGToBodies(el: SVGGeometryElement) {
+function svgToVertices(el: SVGGeometryElement) {
   let verts: Array<{ x: number; y: number }> = [
     ...Array(Math.ceil(el.getTotalLength())),
   ].map(
@@ -148,52 +104,54 @@ function decomposeSVGToBodies(el: SVGGeometryElement) {
 
   //const path2D = new Path2D(el.getAttribute("d"));
 
-  // Create a new shape per convex thingo
+  // Create a set of vertices per convex thingo
   return quickDecomp(simplifiedLine.map(({ x, y }) => [x, y])).map(
-    (convexVerts) => {
-      const body = new Body(
-        0,
-        // anti-clockwise
-        convexVerts.map(([x, y]) => new Vector(x, y))
-      );
+    (convexVerts) => convexVerts.map(([x, y]) => new Vector(x, y))
+  );
+}
+
+function loadFromSVG(selector) {
+  const bodies = Array.from(
+    document.querySelectorAll(
+      `${selector} > *:not([data-kind=hole]):not([data-kind=ball])`
+    )
+  ).flatMap((el) =>
+    svgToVertices(el).map((verts) => {
+      const body = new Body(verts);
       body.bounciness = WALL_BOUNCINESS;
       body.render = fillRenderer;
       body.kind = "convex-decomp";
       return body;
-    }
-  );
-}
-
-function loadFromSVG() {
-  Array.from(document.querySelectorAll("svg > *")).map(
-    (el: SVGGeometryElement) => {
-      // TODO
-      switch (el.dataset.kind) {
-        case "ball": {
-          console.log("ball");
-          break;
-        }
-        case "hole": {
-          console.log("hole");
-          break;
-        }
-        default: {
-          console.log("default");
-          decomposeSVGToBodies(el);
-          break;
-        }
-      }
-    }
+    })
   );
 
-  let player;
-  // For each child of the svg
-  return {
-    player,
-    objects: Array.from(document.querySelectorAll("svg > *")).flatMap(
-      (el: SVGGeometryElement) => decomposeSVGToBodies(el)
-    ),
+  const holeVerts = svgToVertices(
+    document.querySelector(`${selector} > [data-kind=hole]`)
+  )[0];
+  const hole = new Body(holeVerts);
+  hole.bounciness = HOLE_DETECTOR_BOUNCINESS;
+  hole.render = strokeRenderer;
+  hole.kind = "holeDetector";
+
+  const playerEl: SVGGeometryElement = document.querySelector(
+    `${selector} > [data-kind=ball]`
+  );
+  const playerVerts = svgToVertices(playerEl)[0];
+  const player = new Body(playerVerts);
+  player.setMass(+playerEl.dataset.mass);
+  player.onCollision = (otherBody: Body) => {
+    if (otherBody.kind === "holeDetector") {
+      console.log("collided with hole");
+    }
   };
+  player.render = strokeRenderer;
+  player.bounciness = BALL_BOUNCINESS;
+  player.applyField(new Vector(0, GRAVITY / player.invMass));
+  player.staticFrictionCoefficient = BALL_STATIC_FRICTION;
+  player.dynamicFrictionCoefficient = BALL_DYNAMIC_FRICTION;
+  player.kind = "player";
+
+  return [player, hole, bodies];
 }
 
 let dragging: boolean = false;
@@ -230,8 +188,11 @@ const updateShotFromDrag = () => {
   }
 };
 
-const svgObjects = loadFromSVG();
-const objects = [...svgObjects.objects];
+// TODO: level based selector
+const [player, hole, bodies] = loadFromSVG("svg");
+
+// TODO: Do we want to treat the hole separately?
+bodies.push(hole);
 
 const targetFrameTimeMs = 1;
 var accumFrameTimeMs = 0;
@@ -299,8 +260,8 @@ const loop = (thisFrameMs: number) => {
     accumFrameTimeMs -= targetFrameTimeMs;
     // Do updates based on targetFrameTimeMs ms passing
     player.update(targetFrameTimeMs / 1000);
-    for (let i = objects.length; i--; ) {
-      collider(player, objects[i]);
+    for (let i = bodies.length; i--; ) {
+      collider(player, bodies[i]);
     }
   }
 
@@ -318,9 +279,9 @@ const loop = (thisFrameMs: number) => {
   player.render(c);
   c.restore();
 
-  for (let i = objects.length; i--; ) {
+  for (let i = bodies.length; i--; ) {
     c.save();
-    objects[i].render(c);
+    bodies[i].render(c);
     c.restore();
   }
 

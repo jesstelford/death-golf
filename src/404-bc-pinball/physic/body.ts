@@ -77,9 +77,10 @@ export class Body {
 
   render: (context: CanvasRenderingContext2D) => void;
 
-  constructor(mass: number, vertices: Vector[]) {
+  constructor(vertices: Vector[]) {
     this.velocity = Vector.z();
-    this.invMass = mass === 0 ? 0 : 1 / mass;
+    // immobile by default until given mass with `setMass`
+    this.invMass = 0;
     this.pos = calculatePolygonCentroid(vertices);
     this.vertices = vertices.map((v) => v.subtract(this.pos));
     this.axes = computeAxes(this.getVertices());
@@ -93,6 +94,10 @@ export class Body {
     this.render = (_) => {};
 
     this._restFrames = 0;
+  }
+
+  setMass(mass: number) {
+    this.invMass = mass === 0 ? 0 : 1 / mass;
   }
 
   applyField(force: Vector) {

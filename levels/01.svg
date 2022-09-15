@@ -28,8 +28,8 @@
      inkscape:document-units="px"
      showgrid="false"
      inkscape:zoom="0.74509336"
-     inkscape:cx="361.02858"
-     inkscape:cy="214.06713"
+     inkscape:cx="339.55476"
+     inkscape:cy="383.17346"
      inkscape:window-width="1280"
      inkscape:window-height="747"
      inkscape:window-x="0"
@@ -80,4 +80,12 @@
      sodipodi:end="0.77325996"
      sodipodi:arc-type="slice"
      d="m 463.02922,18.118534 a 33.552841,26.171217 0 0 1 -9.54117,18.27986 l -24.01167,-18.27986 z" />
+  <circle
+     style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:0;stroke-dasharray:none;paint-order:stroke fill markers"
+     id="ball"
+     cx="190.58014"
+     cy="297.94925"
+     r="5"
+     data-kind="ball"
+     data-mass="30" />
 </svg>
