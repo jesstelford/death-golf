@@ -165,12 +165,18 @@ let dragVector = new Vector(0, 0);
 // Measured in meters/sec
 const minShotSpeed = 20;
 const maxShotSpeed = 820;
+const shotRange = maxShotSpeed - minShotSpeed;
 let shotSpeed: number = 0;
+let shotAngle: number = 0;
 
 const updateShotFromDrag = () => {
   // The relative vector from start to end dragging positions (ie; mouse /
   // touch)
   dragVector = dragStartPos.subtract(dragPos);
+
+  // Yes, y comes first: https://mdn.io/math.atan2
+  shotAngle = Math.atan2(dragVector.y, dragVector.x);
+
   // The distance dragged, clamped to a maximum value
   const dragDistance = Math.min(dragVector.length(), maxDragDistance);
   if (dragDistance < minDragDistance) {
@@ -181,8 +187,7 @@ const updateShotFromDrag = () => {
     shotSpeed =
       // Project the dragged distance onto the shot speed range. Ie; scale the
       // drag distance as a percentage of the shot speed range.
-      (dragDistance / (maxDragDistance - minDragDistance)) *
-        (maxShotSpeed - minShotSpeed) +
+      (dragDistance / (maxDragDistance - minDragDistance)) * shotRange +
       // And add back in the minimum shot speed since we passed the threshold
       minShotSpeed;
   }
@@ -211,6 +216,28 @@ const clearCanvas = (c: CanvasRenderingContext2D) => {
   // Restore the transform
   c.restore();
 };
+
+function renderShotMeter(size, angle, radius) {
+  const scaleFactor = 8;
+  const scaledSize = size / scaleFactor;
+  // Render the expected velocity vector
+  c.save();
+  c.translate(player.pos.x, player.pos.y);
+  c.rotate(angle - Math.PI / 2);
+  c.beginPath();
+  c.moveTo(0, -scaledSize);
+  const arcAngle = Math.acos(radius / scaledSize);
+  c.arc(0, 0, radius, arcAngle - Math.PI / 2, -arcAngle - Math.PI / 2);
+  c.lineTo(0, -scaledSize);
+  c.closePath();
+  const gradient = c.createLinearGradient(0, 0, 0, maxShotSpeed / -scaleFactor);
+  gradient.addColorStop(0, "white");
+  gradient.addColorStop(1, "red");
+  c.fillStyle = gradient;
+  c.fill();
+  c.stroke();
+  c.restore();
+}
 
 const loop = (thisFrameMs: number) => {
   requestAnimationFrame(loop);
@@ -275,28 +302,20 @@ const loop = (thisFrameMs: number) => {
   c.translate(0.5, 0.5);
 
   // Draw all the objects in the world
-  c.save();
-  player.render(c);
-  c.restore();
-
   for (let i = bodies.length; i--; ) {
     c.save();
     bodies[i].render(c);
     c.restore();
   }
 
-  if (dragging) {
-    const shot = dragVector.normal().multiply(shotSpeed);
-    // Render the expected velocity vector
-    c.save();
-    c.translate(player.pos.x, player.pos.y);
-    c.beginPath();
-    c.moveTo(0, 0);
-    c.lineTo(shot.x, shot.y);
-    c.closePath();
-    c.stroke();
-    c.restore();
+  if (dragging && shotSpeed) {
+    renderShotMeter(shotSpeed, shotAngle, BALL_RADIUS * 2);
   }
+
+  // Player should be drawn on top of everything
+  c.save();
+  player.render(c);
+  c.restore();
 
   c.save();
   c.font = "28px sans";
@@ -304,13 +323,6 @@ const loop = (thisFrameMs: number) => {
     c.fillText(`resting`, 10, 20);
   }
   c.fillText(`shots: ${shots}`, 10, 50);
-  if (dragging) {
-    c.fillText(
-      `drag: ${dragPos.x} ${dragPos.y}, dragStart: ${dragStartPos.x} ${dragStartPos.y}`,
-      10,
-      80
-    );
-  }
   c.restore();
   c.restore();
 
