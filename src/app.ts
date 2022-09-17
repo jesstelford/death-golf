@@ -82,6 +82,7 @@ function fillRenderer(c: CanvasRenderingContext2D) {
   }
   c.closePath();
   c.fill();
+  c.lineJoin = "bevel";
   c.stroke();
 }
 
