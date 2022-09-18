@@ -61,7 +61,6 @@ module.exports = {
     "removeNonInheritableGroupAttrs",
     "removeUselessStrokeAndFill",
     "cleanupEnableBackground",
-    "removeHiddenElems",
     "removeEmptyText",
     "convertShapeToPath",
     "moveElemsAttrsToGroup",
