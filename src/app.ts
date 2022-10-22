@@ -5,13 +5,7 @@ import { simplify } from "./poly-simplify";
 import { quickDecomp, makeCCW } from "./poly-decomp";
 
 // Constants
-const WALL_BOUNCINESS = 3;
-const HOLE_DETECTOR_BOUNCINESS = 0;
-const BALL_MASS = 20;
 const BALL_RADIUS = 5;
-const BALL_BOUNCINESS = 0.3;
-const BALL_STATIC_FRICTION = 0.3;
-const BALL_DYNAMIC_FRICTION = 0.2;
 const GRAVITY = 980; // 9.8m2/s
 
 const canvas = window.a;
@@ -111,46 +105,66 @@ function svgToVertices(el: SVGGeometryElement) {
   );
 }
 
+const defaultsByKind = {
+  wall: {
+    mass: 0,
+    bounciness: 3,
+    staticFriction: 1,
+    dynamicFriction: 1,
+  },
+  ball: {
+    mass: 20,
+    bounciness: 0.3,
+    staticFriction: 0.3,
+    dynamicFriction: 0.2,
+  },
+  hole: {
+    mass: 0,
+    bounciness: 0,
+    staticFriction: 1,
+    dynamicFriction: 1,
+  },
+};
+
 function loadFromSVG(selector) {
   const bodies = Array.from(
-    document.querySelectorAll(
-      `${selector} > *:not([data-kind=hole]):not([data-kind=ball])`
-    )
+    document.querySelectorAll(`${selector} > *`)
   ).flatMap((el) =>
     svgToVertices(el).map((verts) => {
       const body = new Body(verts);
-      body.bounciness = WALL_BOUNCINESS;
+      const kind = el.dataset.kind ?? "wall";
+      const config = Object.assign({}, defaultsByKind[kind], el.dataset);
+      if (+config.mass) {
+        body.setMass(+config.mass);
+        body.applyField(new Vector(0, GRAVITY / body.invMass));
+      }
+      body.bounciness = +config.bounciness;
+      body.staticFrictionCoefficient = +config.staticFriction;
+      body.dynamicFrictionCoefficient = +config.dynamicFriction;
       body.render = fillRenderer;
-      body.kind = "convex-decomp";
+      body.kind = kind;
       return body;
     })
   );
 
-  const holeVerts = svgToVertices(
-    document.querySelector(`${selector} > [data-kind=hole]`)
-  )[0];
-  const hole = new Body(holeVerts);
-  hole.bounciness = HOLE_DETECTOR_BOUNCINESS;
+  const holeIndex = bodies.findIndex(({ kind }) => kind === "hole");
+  if (holeIndex === -1) {
+    throw new Error(`Couldn't detect kind="hole" in level`);
+  }
+  const hole = bodies.splice(holeIndex, 1)[0];
   hole.render = strokeRenderer;
-  hole.kind = "holeDetector";
 
-  const playerEl: SVGGeometryElement = document.querySelector(
-    `${selector} > [data-kind=ball]`
-  );
-  const playerVerts = svgToVertices(playerEl)[0];
-  const player = new Body(playerVerts);
-  player.setMass(+playerEl.dataset.mass);
+  const playerIndex = bodies.findIndex(({ kind }) => kind === "ball");
+  if (playerIndex === -1) {
+    throw new Error(`Couldn't detect kind="ball" in level`);
+  }
+  const player = bodies.splice(playerIndex, 1)[0];
+  player.render = strokeRenderer;
   player.onCollision = (otherBody: Body) => {
-    if (otherBody.kind === "holeDetector") {
+    if (otherBody.kind === "hole") {
       console.log("collided with hole");
     }
   };
-  player.render = strokeRenderer;
-  player.bounciness = BALL_BOUNCINESS;
-  player.applyField(new Vector(0, GRAVITY / player.invMass));
-  player.staticFrictionCoefficient = BALL_STATIC_FRICTION;
-  player.dynamicFrictionCoefficient = BALL_DYNAMIC_FRICTION;
-  player.kind = "player";
 
   return [player, hole, bodies];
 }

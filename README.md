@@ -50,20 +50,20 @@ collision, and various special game objects.
       1. `data-physics: <boolean>` (default: `false`. If not `true`, path is purely
          for display)
       1. `data-mass: <number>` (default: `0` [ie; immobile])
-      1. `data-bounciness: <number>` (default: `0.6`)
+      1. `data-bounciness: <number>` (default: `3`)
       1. `data-static-friction: <number>` (0 <= n <= 1)
       1. `data-dynamic-friction: <number>` (0 <= n <= 1, must be less than
          static friction)
       1. `data-render: <boolean>` (default: `false`)
 1. Special objects
    1. Ball
-      1. _Default values: `mass: 20, bounciness: 0.6`_
+      1. _Default values: `mass: 20, bounciness: 0.6, static-friction: 0.3, dynamic-friction: 0.2`_
       1. Edit -> XML Editor
-         1. `id: "ball"`
+         1. `data-kind: "ball"`
          1. `rx` & `ry` must be `10` (to create a circle)
    1. Hole
       1. Edit -> XML Editor
-         1. `id: "hole"`
+         1. `data-kind: "hole"`
 1. Export
    1. Select all
    1. Object -> Ungroup _(to avoid exporting `transform: translate()` styles)_
